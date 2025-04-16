@@ -1,5 +1,5 @@
-from django.shortcuts import render, redirect
-from django.http import JsonResponse
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import JsonResponse, HttpResponse, FileResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from .models import DataSource
@@ -9,6 +9,9 @@ import uuid
 from .utils import extract_pdf_text, extract_docx_text, extract_txt_text, extract_text_from_url
 import logging
 import json
+import os
+from django.utils.text import slugify
+import tempfile
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -57,7 +60,16 @@ def add_data_source(request):
                         for page in page_data_list if page['status'] == 'success'
                     ])
                     extracted_text = combined_text
-                    
+
+                    for page in page_data_list:
+                        data_source = DataSource(
+                            user=request.user,
+                            url=page['url'],
+                            text_title=page['title'],
+                            text_content=page['text'],
+                        )
+                        data_source.save()
+
                     # Create a title with page count
                     text_title = f"Website: {url} (with {len(page_data_list)} pages)"
                 else:
@@ -92,35 +104,20 @@ def add_data_source(request):
                 return JsonResponse({'error': 'Please provide a valid data source with all required fields.'}, status=400)
 
         except Exception as e:
-            logger.error(f"Error processing data source: {str(e)}", exc_info=True)
+            logger.error(f"Error processing data source: {str(e)}")
             return JsonResponse({'error': f'Error processing data source: {str(e)}'}, status=500)
 
         # Save to database
         try:
-            # Create metadata for storage
-            metadata = {}
-            
-            if extracted_pages:
-                # Store the structured page data as metadata
-                metadata = {
-                    'page_count': len(extracted_pages),
-                    'success_count': sum(1 for page in extracted_pages if page['status'] == 'success'),
-                    'error_count': sum(1 for page in extracted_pages if page['status'] == 'error'),
-                    'source_urls': [page['url'] for page in extracted_pages]
-                }
-            
             data_source = DataSource(
                 user=request.user,
                 url=url if url else None,
                 file=file if file else None,
                 text_title=text_title if text_title else source_name,
                 text_content=extracted_text,
-                metadata=json.dumps(metadata)
             )
             data_source.save()
-            logger.info(f"Saved data source with ID: {data_source.id}")
         except Exception as e:
-            logger.error(f"Error saving data source to database: {str(e)}", exc_info=True)
             return JsonResponse({'error': f'Error saving to database: {str(e)}'}, status=500)
 
         # Process for Pinecone
@@ -143,29 +140,15 @@ def add_data_source(request):
                     if not page_chunks:
                         continue
                     
-                    # Get embeddings for chunks
-                    embeddings = pc.embeddings(page_chunks)
-                    
-                    # Upsert each chunk with metadata
-                    for chunk_idx, (chunk, embedding) in enumerate(zip(page_chunks, embeddings)):
-                        chunk_id = f"{data_source.id}_{page_index}_{chunk_idx}_{uuid.uuid4().hex[:8]}"
-                        
-                        chunk_data = {
-                            "id": chunk_id,
-                            "metadata": {
-                                "data_source_id": str(data_source.id),
-                                "user_id": str(request.user.id),
-                                "source_type": source_type,
-                                "source_name": source_name,
-                                "page_title": page_data['title'],
-                                "page_url": page_data['url'],
-                                "is_main_page": page_data.get('is_main_page', False),
-                                "page_index": page_index,
-                                "chunk_index": chunk_idx,
-                                "chunk_id": chunk_id
-                            }
-                        }
-                        pc.upsert(chunk_data, embedding, namespace=f"{request.user.username}")
+                    # Use batch upserting for better efficiency
+                    pc.batch_upsert_chunks(
+                        chunks=page_chunks,
+                        data_source_id=data_source.id,
+                        user_id=request.user.id,
+                        source_type=source_type,
+                        source_name=source_name,
+                        namespace=f"{request.user.username}"
+                    )
                 
                 logger.info(f"Successfully processed {total_chunks} chunks from {len(extracted_pages)} pages for data source ID: {data_source.id}")
                 return JsonResponse({
@@ -180,28 +163,15 @@ def add_data_source(request):
                 # Chunk text and embed for Pinecone
                 chunks = chunk_text(extracted_text)
                 
-                # Process chunks in batches for efficiency
-                batch_size = 10
-                for i in range(0, len(chunks), batch_size):
-                    batch_chunks = chunks[i:i+batch_size]
-                    embeddings = pc.embeddings(batch_chunks)
-                    
-                    # Upsert each chunk with proper metadata
-                    for j, (chunk, embedding) in enumerate(zip(batch_chunks, embeddings)):
-                        chunk_index = i + j
-                        chunk_data = {
-                            "id": f"{data_source.id}_{chunk_index}_{uuid.uuid4().hex[:8]}",
-                            "metadata": {
-                                "title": data_source.text_title,
-                                "source_type": source_type,
-                                "source_name": source_name,
-                                "chunk_index": chunk_index,
-                                "total_chunks": len(chunks),
-                                "data_source_id": str(data_source.id),
-                                "user_id": str(request.user.id)
-                            }
-                        }
-                        pc.upsert(chunk_data, embedding, namespace=f"{request.user.username}")
+                # Use the new batch upserting method
+                pc.batch_upsert_chunks(
+                    chunks=chunks,
+                    data_source_id=data_source.id,
+                    user_id=request.user.id,
+                    source_type=source_type,
+                    source_name=source_name,
+                    namespace=f"{request.user.username}"
+                )
                 
                 logger.info(f"Successfully processed {len(chunks)} chunks for data source ID: {data_source.id}")
                 return JsonResponse({
@@ -211,11 +181,97 @@ def add_data_source(request):
                 }, status=200)
                 
         except Exception as e:
-            logger.error(f"Error upserting to Pinecone: {str(e)}", exc_info=True)
+            logger.error(f"Error upserting to Pinecone: {str(e)}")
             return JsonResponse({'error': f'Error upserting to Pinecone: {str(e)}'}, status=500)
     
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-        
+@login_required
+def view_data_source_detail(request, data_source_id):
+    """
+    View details of a specific data source
+    """
+    # Get the data source or return 404 if not found
+    data_source = get_object_or_404(DataSource, id=data_source_id, user=request.user)
+    
+    # Calculate content statistics
+    word_count = len(data_source.text_content.split()) if data_source.text_content else 0
+    character_count = len(data_source.text_content) if data_source.text_content else 0
+    line_count = data_source.text_content.count('\n') + 1 if data_source.text_content else 0
+    
+    # Determine source type
+    is_url = bool(data_source.url)
+    is_file = bool(data_source.file)
+    
+    context = {
+        'data_source': data_source,
+        'word_count': word_count,
+        'character_count': character_count,
+        'line_count': line_count,
+        'is_url': is_url,
+        'is_file': is_file,
+        'created_at': data_source.created_at,
+    }
+    
+    return render(request, 'kb/view_data_source.html', context)
 
+
+@login_required
+def download_data_source(request, data_source_id):
+    """
+    Download the text content of a data source as a file
+    """
+    # Get the data source or return 404 if not found
+    data_source = get_object_or_404(DataSource, id=data_source_id, user=request.user)
+    
+    # If the data source is a file and it still exists, return the file
+    if data_source.file and os.path.exists(data_source.file.path):
+        return FileResponse(data_source.file, as_attachment=True, filename=os.path.basename(data_source.file.path))
+    
+    # Otherwise, create a text file from the content
+    if data_source.text_content:
+        # Create a temporary file
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.txt') as temp_file:
+            temp_file.write(data_source.text_content.encode('utf-8'))
+            temp_path = temp_file.name
+        
+        # Create a filename based on the data source title
+        filename = f"{slugify(data_source.text_title)}.txt"
+        
+        # Return the file and then delete it
+        response = FileResponse(open(temp_path, 'rb'), as_attachment=True, filename=filename)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Schedule the file for deletion after the response has been sent
+        # This doesn't immediately delete the file, allowing it to be sent first
+        import atexit
+        atexit.register(lambda: os.remove(temp_path) if os.path.exists(temp_path) else None)
+        
+        return response
+    
+    # If there's no content, return a 404
+    return HttpResponse("No content available for download", status=404)
+
+
+@login_required
+def delete_data_source(request, data_source_id):
+    """
+    Delete a data source
+    """
+    if request.method == 'POST':
+        # Get the data source or return 404 if not found
+        data_source = get_object_or_404(DataSource, id=data_source_id, user=request.user)
+        
+        try:
+            data_source.delete()
+            
+            messages.success(request, "Data source deleted successfully.")
+            return redirect('core:dashboard')
+        except Exception as e:
+            logger.error(f"Error deleting data source: {str(e)}")
+            messages.error(request, f"Error deleting data source: {str(e)}")
+            return redirect('core:dashboard')
+    
+    # If not a POST request, redirect to the detail view
+    return redirect('kb:view_data_source', data_source_id=data_source_id)

@@ -1,14 +1,23 @@
 from pinecone import Pinecone, ServerlessSpec
+import google.generativeai as genai
 from django.conf import settings
 import logging
 import random
+import os
+import uuid
+from dotenv import load_dotenv
 
-# Configure logging
-logger = logging.getLogger(__name__)
+load_dotenv()
+
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+genai.configure(api_key=GOOGLE_API_KEY)
+llm = genai.GenerativeModel('gemini-1.5-pro-latest')
+
+
 
 # Configuration
 INDEX_NAME = "rag-chatbot"
-EMBEDDING_DIMENSION = 1536
+EMBEDDING_DIMENSION = 1024
 EMBEDDING_MODEL = "multilingual-e5-large"
 
 def chunk_text(text, chunk_size=500, overlap=100):
@@ -39,7 +48,6 @@ class PineconeClient:
             self._ensure_index_exists()
             self.index = self.pc.Index(INDEX_NAME)
         except Exception as e:
-            logger.error(f"Failed to initialize Pinecone client: {str(e)}")
             raise
 
     def _ensure_index_exists(self):
@@ -50,7 +58,6 @@ class PineconeClient:
             
             # Create index if it doesn't exist
             if INDEX_NAME not in [index['name'] for index in indexes.get('indexes', [])]:
-                logger.info(f"Creating Pinecone index: {INDEX_NAME}")
                 self.pc.create_index(
                     name=INDEX_NAME,
                     dimension=EMBEDDING_DIMENSION,
@@ -60,9 +67,8 @@ class PineconeClient:
                         region="us-east-1"
                     )
                 )
-                logger.info(f"Successfully created index: {INDEX_NAME}")
         except Exception as e:
-            logger.error(f"Error checking/creating index: {str(e)}")
+            
             raise
 
     def embeddings(self, data):
@@ -83,7 +89,6 @@ class PineconeClient:
             )
             return embeddings
         except Exception as e:
-            logger.error(f"Error generating embeddings: {str(e)}")
             raise
 
     def query(self, embedding, namespace="", top_k=3):
@@ -109,79 +114,123 @@ class PineconeClient:
             )
             return results
         except Exception as e:
-            logger.error(f"Error querying Pinecone: {str(e)}")
             return {"matches": []}
 
-    def upsert(self, data, embeddings, namespace=""):
+    def upsert(self, data, embedding_obj, namespace="", chunk_text=None):
         """
         Upsert vectors to the index.
         
         Args:
             data (dict): Document data with at least id and metadata
-            embeddings: Vector embeddings to store
+            embedding_obj: Vector embeddings to store
             namespace (str): Namespace to store in
+            chunk_text (str, optional): The actual text of the chunk to be stored
         """
         try:
-            # Create vector data with all metadata provided
+            vector_id = data.get('id', str(uuid.uuid4()))
+            metadata = data.get("metadata", {})
+            if chunk_text:
+                metadata["text_content"] = chunk_text
+            
+            if "chunk" in data and data["chunk"]:
+                metadata["text_content"] = data["chunk"]
+            
+            for field in ["title", "description", "source", "source_name", "page_title", "page_url"]:
+                if field in data and field not in metadata:
+                    metadata[field] = data[field]
+            
+            embedding_values = None
+            
+            if hasattr(embedding_obj, '__class__') and embedding_obj.__class__.__name__ == 'EmbeddingsList':
+                if len(embedding_obj) > 0:
+                    embedding_values = embedding_obj[0].values
+            # Handle dictionary with 'values' key
+            elif hasattr(embedding_obj, 'get') and embedding_obj.get('values'):
+                embedding_values = embedding_obj.get('values')
+            # Handle object with values attribute
+            elif hasattr(embedding_obj, 'values'):
+                embedding_values = embedding_obj.values
+            # Handle list of embeddings objects
+            elif isinstance(embedding_obj, list) and len(embedding_obj) > 0:
+                if hasattr(embedding_obj[0], 'values'):
+                    embedding_values = embedding_obj[0].values
+            
             vector_data = {
-                "id": str(random.uuid4()),
-                "values": embeddings,
-                "metadata": data.get("metadata", {})
+                "id": vector_id,
+                "values": embedding_values,  
+                "metadata": metadata
             }
             
-            # If no metadata provided but fields exist in data, create metadata
-            if "metadata" not in data and any(k in data for k in ["title", "description", "source", "chunk"]):
-                vector_data["metadata"] = {}
-                for field in ["title", "description", "source", "chunk"]:
-                    if field in data:
-                        vector_data["metadata"][field] = data[field]
-            
+          
             self.index.upsert(vectors=[vector_data], namespace=namespace)
-            logger.debug(f"Upserted document with ID: {data['id']}")
             return True
         except Exception as e:
-            logger.error(f"Error upserting to Pinecone: {str(e)}")
+            
             return False
 
-    def delete(self, ids=None, namespace="", delete_all=False, filter=None):
+    def batch_upsert_chunks(self, chunks, data_source_id, user_id, source_type, source_name, namespace=""):
         """
-        Delete vectors from the index.
+        Upsert a batch of text chunks with proper metadata.
         
         Args:
-            ids (list, optional): IDs to delete
-            namespace (str): Namespace to delete from
-            delete_all (bool): Whether to delete all vectors in the namespace
-            filter (dict, optional): Metadata filter for deletion
-        """
-        try:
-            if delete_all:
-                self.index.delete(delete_all=True, namespace=namespace)
-                logger.info(f"Deleted all vectors in namespace: {namespace}")
-            elif ids:
-                self.index.delete(ids=ids, namespace=namespace)
-                logger.info(f"Deleted {len(ids)} vectors")
-            elif filter:
-                self.index.delete(filter=filter, namespace=namespace)
-                logger.info(f"Deleted vectors matching filter: {filter}")
-            return True
-        except Exception as e:
-            logger.error(f"Error deleting from Pinecone: {str(e)}")
-            return False
-
-    def fetch(self, ids, namespace=""):
-        """
-        Fetch vectors by ID.
-        
-        Args:
-            ids (list): IDs to fetch
-            namespace (str): Namespace to fetch from
+            chunks (list): List of text chunks to embed and store
+            data_source_id (str): ID of the data source
+            user_id (str): ID of the user
+            source_type (str): Type of source (url, pdf, etc.)
+            source_name (str): Name of the source
+            namespace (str): Namespace to store in
             
         Returns:
-            dict: Fetched vectors
+            bool: Success or failure
         """
         try:
-            results = self.index.fetch(ids=ids, namespace=namespace)
-            return results
+            successful_upserts = 0
+            
+            # First, generate all embeddings at once for efficiency
+            all_embeddings = self.embeddings(chunks)
+            
+            # Check if we got valid embeddings
+            if not all_embeddings or len(all_embeddings) != len(chunks):
+                
+                return False
+            
+            # Process chunks with their corresponding embeddings
+            for chunk_idx, (chunk, embedding) in enumerate(zip(chunks, all_embeddings)):
+                # Generate a unique ID for this chunk
+                chunk_id = f"{data_source_id}_{chunk_idx}_{uuid.uuid4().hex[:8]}"
+                
+                # Prepare metadata
+                chunk_data = {
+                    "id": chunk_id,
+                    "metadata": {
+                        "data_source_id": str(data_source_id),
+                        "user_id": str(user_id),
+                        "source_type": source_type,
+                        "source_name": source_name,
+                        "chunk_index": chunk_idx,
+                        "total_chunks": len(chunks),
+                        "chunk_id": chunk_id,
+                        "text_content": chunk  # Store the actual text content
+                    }
+                }
+                
+                # Upsert the chunk
+                if self.upsert(chunk_data, embedding, namespace=namespace):
+                    successful_upserts += 1
+                
+            return successful_upserts > 0
         except Exception as e:
-            logger.error(f"Error fetching from Pinecone: {str(e)}")
-            return {"vectors": {}}
+            
+            return False
+
+def generate_response(contexts, query):
+    prompt = f"""
+    You are a helpful assistant. Answer the question based on the context provided. If you don't know the answer, say "I don't know".
+    Contexts: {contexts}
+    Query: {query}
+    Answer:
+    """
+    response = llm.generate_content(prompt)
+    return response.text
+
+

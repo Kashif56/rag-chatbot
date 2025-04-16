@@ -1,76 +1,30 @@
-{% extends 'base.html' %}
+{% extends 'layout.html' %}
 
 {% block title %}Dashboard - RAG-Chatbot{% endblock %}
 
-{% block extra_css %}
+{% block page_css %}
 <style>
-    /* Dashboard Layout */
-    .dashboard-container {
-        display: flex;
-        min-height: 100vh;
-    }
-    
-    /* Sidebar Styles */
-    .sidebar {
-        width: 250px;
-        background: var(--dark-bg);
-        color: white;
-        transition: all 0.3s;
-        height: 100vh;
-        position: fixed;
-    }
-    
-    .sidebar .logo {
-        padding: 1.5rem;
-        font-size: 1.5rem;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .sidebar-menu {
-        padding: 1rem 0;
-    }
-    
-    .menu-item {
-        padding: 0.75rem 1.5rem;
-        color: rgba(255,255,255,0.8);
-        display: flex;
-        align-items: center;
-        text-decoration: none;
-        transition: all 0.3s;
-    }
-    
-    .menu-item:hover, .menu-item.active {
-        background: rgba(255,255,255,0.1);
-        color: white;
-    }
-    
-    .menu-item i {
-        margin-right: 0.75rem;
-        width: 20px;
-        text-align: center;
-    }
-    
-    /* Main Content Area */
-    .main-content {
-        flex: 1;
-        margin-left: 250px;
-        background: var(--light-bg);
-    }
-    
-    /* Navbar Styles */
-    .dashboard-nav {
-        background: white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        padding: 1rem 1.5rem;
-    }
-    
     /* Knowledge Base Cards */
     .kb-card {
-        transition: transform 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
+        background-color: #ffffff;
+        color: #212529;
+        border-color: #e1e1e1;
+    }
+    
+    body.dark-mode .kb-card {
+        background-color: #343a40; 
+        color: #f8f8f2;
+        border-color: #495057;
     }
     
     .kb-card:hover {
         transform: translateY(-5px);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    body.dark-mode .kb-card:hover {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
     
     .kb-type-badge {
@@ -79,10 +33,31 @@
         right: 1rem;
     }
     
+    /* Card footer */
+    body.dark-mode .card-footer {
+        background-color: #2c3034;
+        border-color: #495057;
+    }
+    
+    /* Card text */
+    .card-text.text-muted {
+        color: #6c757d !important;
+    }
+    
+    body.dark-mode .card-text.text-muted,
+    body.dark-mode .text-muted {
+        color: #adb5bd !important;
+    }
+    
     /* Add Data Source Modal */
     .modal-content {
         border-radius: 15px;
         border: none;
+    }
+    
+    body.dark-mode .modal-content {
+        background-color: #2d3238;
+        color: #f8f8f2;
     }
     
     .nav-tabs .nav-link {
@@ -104,6 +79,15 @@
         border-bottom: 2px solid #e9ecef;
     }
     
+    body.dark-mode .nav-tabs .nav-link {
+        color: #adb5bd;
+    }
+    
+    body.dark-mode .nav-tabs .nav-link:hover:not(.active) {
+        color: #f8f8f2;
+        border-bottom: 2px solid #4a5568;
+    }
+    
     .tab-content {
         padding-top: 1.5rem;
     }
@@ -115,6 +99,7 @@
         text-align: center;
         transition: all 0.3s;
         cursor: pointer;
+        background-color: transparent;
     }
     
     .file-upload-area:hover {
@@ -122,15 +107,32 @@
         background: rgba(45, 63, 225, 0.05);
     }
     
+    body.dark-mode .file-upload-area {
+        border-color: #4a5568;
+    }
+    
+    body.dark-mode .file-upload-area:hover {
+        border-color: var(--primary-color);
+        background: rgba(45, 63, 225, 0.1);
+    }
+    
     .file-info {
         font-size: 0.85rem;
         color: #6c757d;
+    }
+    
+    body.dark-mode .file-info {
+        color: #adb5bd;
     }
     
     .empty-state {
         text-align: center;
         padding: 3rem;
         color: #6c757d;
+    }
+    
+    body.dark-mode .empty-state {
+        color: #adb5bd;
     }
     
     .source-icon {
@@ -141,6 +143,10 @@
     .source-date {
         font-size: 0.85rem;
         color: #6c757d;
+    }
+    
+    body.dark-mode .source-date {
+        color: #adb5bd;
     }
     
     .loading-indicator {
@@ -156,152 +162,144 @@
     .badge.source-type {
         font-size: 0.75rem;
     }
+    
+    /* Dark mode button styling */
+    body.dark-mode .btn-light {
+        background-color: #343a40;
+        border-color: #495057;
+        color: #f8f8f2;
+    }
+    
+    body.dark-mode .btn-light:hover {
+        background-color: #495057;
+        border-color: #6c757d;
+        color: #ffffff;
+    }
+    
+    /* Dark mode form controls */
+    body.dark-mode .form-control,
+    body.dark-mode .input-group-text {
+        background-color: #2c3034;
+        border-color: #495057;
+        color: #f8f8f2;
+    }
+    
+    body.dark-mode .form-control::placeholder {
+        color: #6c757d;
+    }
+    
+    /* Dark mode for alerts */
+    body.dark-mode .alert-success {
+        background-color: #1e462e;
+        border-color: #28a745;
+        color: #d4edda;
+    }
+    
+    body.dark-mode .alert-danger {
+        background-color: #471e29;
+        border-color: #dc3545;
+        color: #f8d7da;
+    }
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="dashboard-container">
-    <!-- Sidebar -->
-    <div class="sidebar">
-        <div class="logo">
-            <i class="fas fa-robot me-2"></i> RAG-Chatbot
-        </div>
-        <div class="sidebar-menu">
-            <a href="#" class="menu-item active">
-                <i class="fas fa-home"></i> Dashboard
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-database"></i> Knowledge Base
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-comments"></i> Chat Interface
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-chart-line"></i> Analytics
-            </a>
-            <a href="#" class="menu-item">
-                <i class="fas fa-cog"></i> Settings
-            </a>
-        </div>
+{% block main_content %}
+<!-- Main Content Area -->
+<div class="container-fluid py-4">
+    <!-- Add Data Source Button -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0">Knowledge Base</h3>
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDataSourceModal">
+            <i class="fas fa-plus me-2"></i>Add Data Source
+        </button>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content">
-        <!-- Navbar -->
-        <nav class="navbar dashboard-nav">
-            <div class="container-fluid">
-                <div class="d-flex align-items-center">
-                    <h4 class="mb-0">Knowledge Base</h4>
+    <!-- Knowledge Base Cards -->
+    <div class="row g-4" id="dataSources">
+        {% if data_sources %}
+            {% for source in data_sources %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card kb-card h-100">
+                    <div class="card-body">
+                        <span class="badge bg-primary kb-type-badge">
+                            {% if source.file %}
+                                {% with filename=source.file.name %}
+                                    {% if '.pdf' in filename %}
+                                        <i class="fas fa-file-pdf me-1"></i> PDF
+                                    {% elif '.docx' in filename %}
+                                        <i class="fas fa-file-word me-1"></i> DOCX
+                                    {% elif '.txt' in filename %}
+                                        <i class="fas fa-file-alt me-1"></i> TXT
+                                    {% else %}
+                                        <i class="fas fa-file me-1"></i> FILE
+                                    {% endif %}
+                                {% endwith %}
+                            {% elif source.url %}
+                                <i class="fas fa-globe me-1"></i> URL
+                            {% else %}
+                                <i class="fas fa-align-left me-1"></i> TEXT
+                            {% endif %}
+                        </span>
+                        <h5 class="card-title mb-3">
+                            {{ source.text_title|default:"Untitled Document" }}
+                        </h5>
+                        <p class="card-text text-muted mb-3">
+                            {% if source.url %}
+                                {{ source.url }}
+                            {% elif source.file %}
+                                {{ source.file.name }}
+                            {% else %}
+                                {{ source.text_content|truncatechars:100 }}
+                            {% endif %}
+                        </p>
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            Added on {{ source.created_at|date:"M d, Y" }}
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge source-type bg-light text-dark">
+                                {% if source.file %}File{% elif source.url %}Website{% else %}Text{% endif %}
+                            </span>
+                            <div>
+                                <a href="{% url 'kb:view_data_source' data_source_id=source.id %}" class="btn btn-sm btn-light me-2" title="View">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-sm btn-light me-2" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger delete-source" data-id="{{ source.id }}" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="d-flex align-items-center">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addDataSourceModal">
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="empty-state">
+                    <div class="source-icon">
+                        <i class="fas fa-database"></i>
+                    </div>
+                    <h4>No Data Sources Yet</h4>
+                    <p>Add your first data source to start building your knowledge base</p>
+                    <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addDataSourceModal">
                         <i class="fas fa-plus me-2"></i> Add Data Source
                     </button>
-                    <div class="dropdown ms-3">
-                        <button class="btn btn-light" type="button" data-bs-toggle="dropdown">
-                            <i class="fas fa-user-circle"></i>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-user me-2"></i> Profile</a></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog me-2"></i> Settings</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i> Logout</a></li>
-                        </ul>
-                    </div>
                 </div>
             </div>
-        </nav>
-
-        <!-- Main Content Area -->
-        <div class="container-fluid py-4">
-            <!-- Knowledge Base Cards -->
-            <div class="row g-4" id="dataSources">
-                {% if data_sources %}
-                    {% for source in data_sources %}
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card kb-card h-100">
-                            <div class="card-body">
-                                <span class="badge bg-primary kb-type-badge">
-                                    {% if source.file %}
-                                        {% with filename=source.file.name %}
-                                            {% if '.pdf' in filename %}
-                                                <i class="fas fa-file-pdf me-1"></i> PDF
-                                            {% elif '.docx' in filename %}
-                                                <i class="fas fa-file-word me-1"></i> DOCX
-                                            {% elif '.txt' in filename %}
-                                                <i class="fas fa-file-alt me-1"></i> TXT
-                                            {% else %}
-                                                <i class="fas fa-file me-1"></i> FILE
-                                            {% endif %}
-                                        {% endwith %}
-                                    {% elif source.url %}
-                                        <i class="fas fa-globe me-1"></i> URL
-                                    {% else %}
-                                        <i class="fas fa-align-left me-1"></i> TEXT
-                                    {% endif %}
-                                </span>
-                                <h5 class="card-title mb-3">
-                                    {{ source.text_title|default:"Untitled Document" }}
-                                </h5>
-                                <p class="card-text text-muted mb-3">
-                                    {% if source.url %}
-                                        {{ source.url }}
-                                    {% elif source.file %}
-                                        {{ source.file.name }}
-                                    {% else %}
-                                        {{ source.text_content|truncatechars:100 }}
-                                    {% endif %}
-                                </p>
-                                <div class="d-flex align-items-center text-muted small">
-                                    <i class="fas fa-calendar-alt me-2"></i>
-                                    Added on {{ source.created_at|date:"M d, Y" }}
-                                </div>
-                            </div>
-                            <div class="card-footer bg-transparent">
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <span class="badge source-type bg-light text-dark">
-                                        {% if source.file %}File{% elif source.url %}Website{% else %}Text{% endif %}
-                                    </span>
-                                    <div>
-                                        <a href="#" class="btn btn-sm btn-light me-2" title="View">
-                                            <i class="fas fa-eye"></i>
-                                        </a>
-                                        <button class="btn btn-sm btn-light me-2" title="Edit">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-danger delete-source" data-id="{{ source.id }}" title="Delete">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                    <div class="col-12">
-                        <div class="empty-state">
-                            <div class="source-icon text-muted">
-                                <i class="fas fa-database"></i>
-                            </div>
-                            <h4>No Data Sources Yet</h4>
-                            <p class="text-muted">Add your first data source to start building your knowledge base</p>
-                            <button class="btn btn-primary mt-3" data-bs-toggle="modal" data-bs-target="#addDataSourceModal">
-                                <i class="fas fa-plus me-2"></i> Add Data Source
-                            </button>
-                        </div>
-                    </div>
-                {% endif %}
-            </div>
-            
-            <!-- Loading Indicator -->
-            <div class="loading-indicator" id="loadingIndicator">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2">Processing your data source...</p>
-            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div class="loading-indicator" id="loadingIndicator">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
         </div>
+        <p class="mt-2">Processing your data source...</p>
     </div>
 </div>
 
@@ -344,7 +342,7 @@
                                 <input type="file" id="file" name="file" hidden accept=".pdf,.doc,.docx,.txt">
                                 <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
                                 <h5>Upload Document</h5>
-                                <p class="text-muted mb-1">Drag & drop files here or click to browse</p>
+                                <p class="mb-1">Drag & drop files here or click to browse</p>
                                 <p class="file-info">Supported formats: PDF, DOC, DOCX, TXT</p>
                             </div>
                             <div id="uploadedFileInfo" class="mt-3 d-none">
@@ -376,7 +374,7 @@
                                 <label class="form-check-label" for="scrap_interal_pages">
                                     Scrape all internal pages
                                 </label>
-                                <div class="text-muted small">Include content from all pages within the same domain</div>
+                                <div class="small">Include content from all pages within the same domain</div>
                             </div>
                         </form>
                     </div>
@@ -429,8 +427,42 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}
+{% block page_js %}
 <script>
+    // File upload handling
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update source type badges based on dark mode
+        const updateSourceBadges = function() {
+            if (document.body.classList.contains('dark-mode')) {
+                document.querySelectorAll('.badge.source-type').forEach(badge => {
+                    if (badge.classList.contains('bg-light')) {
+                        badge.classList.remove('bg-light', 'text-dark');
+                        badge.classList.add('bg-dark', 'text-light');
+                    }
+                });
+            } else {
+                document.querySelectorAll('.badge.source-type').forEach(badge => {
+                    if (badge.classList.contains('bg-dark')) {
+                        badge.classList.remove('bg-dark', 'text-light');
+                        badge.classList.add('bg-light', 'text-dark');
+                    }
+                });
+            }
+        };
+        
+        // Initial call
+        updateSourceBadges();
+        
+        // Listen for dark mode toggle from layout.html
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        if (darkModeToggle) {
+            darkModeToggle.addEventListener('click', function() {
+                // Allow time for the toggle to complete
+                setTimeout(updateSourceBadges, 50);
+            });
+        }
+    });
+    
     // File upload handling
     document.getElementById('file').addEventListener('change', function(e) {
         if (this.files && this.files[0]) {
@@ -468,7 +500,9 @@
     
     function highlight() {
         dropArea.classList.add('border-primary');
-        dropArea.style.background = 'rgba(45, 63, 225, 0.05)';
+        const darkMode = document.body.classList.contains('dark-mode');
+        const bgColor = darkMode ? 'rgba(13, 110, 253, 0.15)' : 'rgba(45, 63, 225, 0.05)';
+        dropArea.style.background = bgColor;
     }
     
     function unhighlight() {
