@@ -224,13 +224,82 @@ class PineconeClient:
             return False
 
 def generate_response(contexts, query):
-    prompt = f"""
-    You are a helpful assistant. Answer the question based on the context provided. If you don't know the answer, say "I don't know".
-    Contexts: {contexts}
-    Query: {query}
-    Answer:
     """
-    response = llm.generate_content(prompt)
-    return response.text
+    Generate a response to a user query based on retrieved contexts.
+    
+    Args:
+        contexts (list): List of text chunks retrieved from the knowledge base
+        query (str): User's question
+        
+    Returns:
+        str: Generated response
+    """
+    # Format contexts for better readability
+    formatted_contexts = ""
+    for i, context in enumerate(contexts, 1):
+        # Extract text content from context object or dictionary
+        text = ""
+        if isinstance(context, dict) and 'metadata' in context:
+            if 'text_content' in context['metadata']:
+                text = context['metadata']['text_content']
+            elif 'text' in context['metadata']:
+                text = context['metadata']['text']
+        elif hasattr(context, 'metadata') and hasattr(context.metadata, 'get'):
+            text = context.metadata.get('text_content', context.metadata.get('text', ''))
+        elif isinstance(context, str):
+            text = context
+            
+        # Include source information if available
+        source_info = ""
+        if isinstance(context, dict) and 'metadata' in context:
+            if 'source' in context['metadata']:
+                source_info = f" (Source: {context['metadata']['source']})"
+            elif 'source_name' in context['metadata']:
+                source_info = f" (Source: {context['metadata']['source_name']})"
+            
+        formatted_contexts += f"CONTEXT {i}{source_info}:\n{text}\n\n"
+
+    prompt = f"""
+    You are an expert conversationalist and knowledge specialist. Answer the user's question in a completely natural, human way.
+    
+    I've provided some information below that you should use to answer the question, but your response should sound like a knowledgeable person speaking naturally - not like you're referencing any provided information.
+    
+    INFORMATION:
+    {formatted_contexts}
+    
+    CRITICAL INSTRUCTIONS:
+    1. NEVER mention "context", "provided information", "text", "document", or use phrases like "based on the information" or "according to the text".
+    2. Answer directly and conversationally as if you inherently know this information.
+    3. Don't start with "The answer is..." or "To answer your question..."
+    4. Speak naturally like a human expert would in conversation.
+    5. If you don't have enough information, respond naturally about what you do know and acknowledge any limitations without referring to "provided contexts".
+    6. Maintain a warm, helpful tone while being accurate and precise with facts, dates, and numbers.
+    7. If there are different perspectives, present them as a thoughtful human would, weighing options rather than just listing what different "sources" say.
+    8. For complex answers, use natural paragraph breaks as a human would.
+    9. NEVER EVER say "I don't have information beyond what was provided" or similar phrases.
+    10. If you're uncertain, say something like "I'm not entirely sure about that specific detail" instead of referring to limitations in the provided information.
+    
+    USER QUESTION: {query}
+    
+    YOUR NATURAL HUMAN RESPONSE:
+    """
+    
+    # Generate response using the LLM
+    try:
+        response = llm.generate_content(prompt)
+        
+        # Post-process to remove any remaining references to "contexts" or "provided information"
+        text_response = response.text.strip()
+        text_response = text_response.replace("Based on the information provided, ", "")
+        text_response = text_response.replace("According to the provided context, ", "")
+        text_response = text_response.replace("Based on the context, ", "")
+        text_response = text_response.replace("From the information provided, ", "")
+        text_response = text_response.replace("The context indicates that ", "")
+        text_response = text_response.replace("The provided information shows that ", "")
+        text_response = text_response.replace("According to the context, ", "")
+        
+        return text_response
+    except Exception as e:
+        return "I'm not entirely sure about that. Could you try asking in a different way?"
 
 
