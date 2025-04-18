@@ -30,12 +30,12 @@ CHANNEL_TYPE_CHOICES = [
 class Chatbot(models.Model):
     chatbot_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
-    description = models.TextField()
-    prompt = models.TextField()
+    name = models.CharField(max_length=255, default="New Chatbot")
+    description = models.TextField(null=True, blank=True)
+    prompt = models.TextField(null=True, blank=True)
 
-    llm_provider = models.CharField(max_length=255, choices=LLM_PROVIDER_CHOICES)
-    llm_model = models.CharField(max_length=255, choices=LLM_MODEL_CHOICES)
+    llm_provider = models.CharField(max_length=255, choices=LLM_PROVIDER_CHOICES, default='openai')
+    llm_model = models.CharField(max_length=255, choices=LLM_MODEL_CHOICES, default='gpt-4o-mini')
 
     is_active = models.BooleanField(default=True)
     is_public = models.BooleanField(default=False)
@@ -62,7 +62,7 @@ class Channel(models.Model):
 
 # Email
 class EmailChannel(models.Model):
-    channel = models.OneToOneField(Channel, on_delete=models.CASCADE, related_name='email_config')
+    channel = models.OneToOneField(Channel, on_delete=models.CASCADE, related_name='email_config', null=True, blank=True)
 
     email_address = models.EmailField()
     provider = models.CharField(max_length=100, choices=[
@@ -84,7 +84,7 @@ class EmailChannel(models.Model):
 
 # WhatsApp
 class WhatsAppChannel(models.Model):
-    channel = models.OneToOneField(Channel, on_delete=models.CASCADE, related_name='whatsapp_config')
+    channel = models.OneToOneField(Channel, on_delete=models.CASCADE, related_name='whatsapp_config', null=True, blank=True)
     twilio_account_sid = models.CharField(max_length=255, blank=True, null=True)
     twilio_auth_token = models.CharField(max_length=255, blank=True, null=True)
     twilio_phone_number = models.CharField(max_length=255, blank=True, null=True)
@@ -94,10 +94,10 @@ class WhatsAppChannel(models.Model):
 
 # Messenger
 class MessengerChannel(models.Model):
-    channel = models.OneToOneField(Channel, on_delete=models.CASCADE, related_name='messenger_config')
-    page_id = models.CharField(max_length=255)
-    page_name = models.CharField(max_length=255)
-    access_token = models.TextField()
+    channel = models.OneToOneField(Channel, on_delete=models.CASCADE, related_name='messenger_config', null=True, blank=True)
+    page_id = models.CharField(max_length=255, null=True, blank=True)
+    page_name = models.CharField(max_length=255, null=True, blank=True)
+    access_token = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.page_name} - {self.page_id}"
@@ -107,7 +107,7 @@ class MessengerChannel(models.Model):
 class Message(models.Model):
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     chatbot = models.ForeignKey(Chatbot, on_delete=models.CASCADE)
-    content = models.TextField()
+    content = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
