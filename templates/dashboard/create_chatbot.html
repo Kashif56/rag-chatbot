@@ -1,0 +1,557 @@
+{% extends 'common/dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Create Chatbot | NexusAI Dashboard{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/create_chatbot.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="create-chatbot-container px-3 px-lg-4">
+    <div class="row mb-4 align-items-center">
+        <div class="col-lg-8">
+            <h1 class="page-title">Create New Chatbot</h1>
+            <p class="text-muted">Set up your AI assistant in a few simple steps</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+            <a href="#" class="btn btn-outline-primary btn-sm me-2"><i class="bi bi-question-circle me-1"></i> Help</a>
+            <a href="#" class="btn btn-outline-secondary btn-sm"><i class="bi bi-video me-1"></i> Tutorial</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left Column - Progress and Form -->
+        <div class="col-lg-8">
+            <!-- Progress Bar -->
+            <div class="progress-container mb-4">
+                <div class="progress-steps">
+                    <div class="progress-step active" data-step="1">
+                        <div class="step-indicator">
+                            <span class="step-number">1</span>
+                            <span class="step-check"><i class="fas fa-check"></i></span>
+                        </div>
+                        <div class="step-label">Basic Info</div>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="2">
+                        <div class="step-indicator">
+                            <span class="step-number">2</span>
+                            <span class="step-check"><i class="fas fa-check"></i></span>
+                        </div>
+                        <div class="step-label">AI Settings</div>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="3">
+                        <div class="step-indicator">
+                            <span class="step-number">3</span>
+                            <span class="step-check"><i class="fas fa-check"></i></span>
+                        </div>
+                        <div class="step-label">Channels</div>
+                    </div>
+                    <div class="progress-line"></div>
+                    <div class="progress-step" data-step="4">
+                        <div class="step-indicator">
+                            <span class="step-number">4</span>
+                            <span class="step-check"><i class="fas fa-check"></i></span>
+                        </div>
+                        <div class="step-label">Review</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Form Container -->
+            <div class="card form-card">
+                <div class="card-body p-4">
+                    <form id="createChatbotForm" method="POST" action="" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Step 1: Basic Info -->
+                        <div class="form-step" data-step="1">
+                            <h3 class="card-title mb-4">
+                                <i class="bi bi-info-circle text-primary me-2"></i>Basic Information
+                            </h3>
+                            
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="chatbot_name" name="name" placeholder="Chatbot Name" required>
+                                        <label for="chatbot_name">Chatbot Name</label>
+                                        <div class="invalid-feedback">Please provide a name for your chatbot.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <div class="form-floating mb-3">
+                                        <textarea class="form-control" id="chatbot_description" name="description" placeholder="Description" style="height: 120px"></textarea>
+                                        <label for="chatbot_description">Description</label>
+                                        <div class="form-text">Briefly describe what this chatbot will help users with.</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-12">
+                                    <label class="form-label fw-medium">Chatbot Avatar</label>
+                                    <div class="avatar-selector d-flex align-items-center mb-3">
+                                        <div class="avatar-preview me-3">
+                                            <div class="avatar-preview-image">
+                                                <i class="bi bi-robot"></i>
+                                            </div>
+                                            <img style="display: none;" src="" alt="Avatar Preview">
+                                        </div>
+                                        <div class="avatar-options">
+                                            <div class="mb-2">
+                                                <label for="avatar_upload" class="form-label">Upload Image</label>
+                                                <input class="form-control" type="file" id="avatar_upload" name="avatar" accept="image/*">
+                                            </div>
+                                            <button type="button" class="btn btn-outline-primary generate-avatar-btn">
+                                                <i class="bi bi-magic me-1"></i> Generate Avatar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="avatar_url" id="avatarUrl">
+                                </div>
+                            </div>
+                            
+                            <div class="step-buttons">
+                                <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Step 2: AI Settings (LLM Provider, Model, Prompt) -->
+                        <div class="form-step d-none" data-step="2">
+                            <h3 class="card-title mb-4">
+                                <i class="bi bi-brain text-primary me-2"></i>AI Settings
+                            </h3>
+                            
+                            <div class="model-settings bg-light p-3 mb-4 rounded border">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="llm_provider" class="form-label fw-medium">LLM Provider</label>
+                                        <select class="form-select" id="llm_provider" name="llm_provider" required>
+                                            <option value="" selected disabled>Select a provider</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="anthropic">Anthropic</option>
+                                            <option value="google">Google AI</option>
+                                            <option value="mistral">Mistral AI</option>
+                                            <option value="llama">Meta Llama</option>
+                                        </select>
+                                        <div class="invalid-feedback">Please select an LLM provider.</div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <label for="llm_model" class="form-label fw-medium">LLM Model</label>
+                                        <select class="form-select" id="llm_model" name="llm_model" required>
+                                            <option value="" selected disabled>Select a model</option>
+                                            <!-- Models will be populated dynamically based on provider -->
+                                        </select>
+                                        <div class="invalid-feedback">Please select an LLM model.</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+              
+                            
+                            <div class="step-buttons">
+                                <button type="button" class="btn btn-outline-secondary prev-step"><i class="bi bi-arrow-left me-1"></i> Back</button>
+                                <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Step 3: Channels -->
+                        <div class="form-step d-none" data-step="3">
+                            <h3 class="card-title mb-4">
+                                <i class="bi bi-plug text-primary me-2"></i>Integration Channels
+                            </h3>
+                            
+                            <p class="mb-3">Select the channels where your chatbot will be available:</p>
+                            
+                            <div class="alert alert-info channel-info mb-4">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <span>Please select at least one channel where users will access your chatbot.</span>
+                            </div>
+                            
+                            <div class="channels-container mb-4">
+                                <div class="channel-option">
+                                    <input type="checkbox" class="channel-checkbox" id="channel_web" name="channels" value="web">
+                                    <label for="channel_web">
+                                        <div class="channel-icon">
+                                            <i class="fas fa-globe"></i>
+                                        </div>
+                                        <span class="channel-name">Web Chat</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="channel-option">
+                                    <input type="checkbox" class="channel-checkbox" id="channel_whatsapp" name="channels" value="whatsapp">
+                                    <label for="channel_whatsapp">
+                                        <div class="channel-icon whatsapp">
+                                            <i class="fab fa-whatsapp"></i>
+                                        </div>
+                                        <span class="channel-name">WhatsApp</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="channel-option">
+                                    <input type="checkbox" class="channel-checkbox" id="channel_messenger" name="channels" value="messenger">
+                                    <label for="channel_messenger">
+                                        <div class="channel-icon messenger">
+                                            <i class="fab fa-facebook-messenger"></i>
+                                        </div>
+                                        <span class="channel-name">Messenger</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="channel-option">
+                                    <input type="checkbox" class="channel-checkbox" id="channel_sms" name="channels" value="sms">
+                                    <label for="channel_sms">
+                                        <div class="channel-icon sms">
+                                            <i class="fas fa-sms"></i>
+                                        </div>
+                                        <span class="channel-name">SMS</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="channel-option">
+                                    <input type="checkbox" class="channel-checkbox" id="channel_email" name="channels" value="email">
+                                    <label for="channel_email">
+                                        <div class="channel-icon email">
+                                            <i class="fas fa-envelope"></i>
+                                        </div>
+                                        <span class="channel-name">Email</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Channel Configuration Forms -->
+                            <div class="channel-config-forms mt-4">
+                                <!-- WhatsApp Channel Configuration -->
+                                <div id="whatsapp_config" class="channel-config-form mb-4 d-none">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0">
+                                                <i class="fab fa-whatsapp text-success me-2"></i>WhatsApp Configuration
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Message shown when SMS is enabled first -->
+                                            <div id="whatsapp_sms_shared_info" class="d-none">
+                                                <div class="alert alert-info">
+                                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                                    <span>WhatsApp functionality will use the same Twilio configuration as SMS. Since you've already configured SMS, those settings will be used for WhatsApp as well.</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Fields shown when SMS is not enabled first -->
+                                            <div id="whatsapp_twilio_fields">
+                                                <div class="row g-3">
+                                                    <div class="col-md-12">
+                                                        <div class="form-floating mb-3">
+                                                            <input type="text" class="form-control" id="twilio_account_sid" name="twilio_account_sid" placeholder="Twilio Account SID">
+                                                            <label for="twilio_account_sid">Twilio Account SID</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <div class="form-floating mb-3">
+                                                            <input type="text" class="form-control" id="twilio_auth_token" name="twilio_auth_token" placeholder="Twilio Auth Token">
+                                                            <label for="twilio_auth_token">Twilio Auth Token</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <div class="form-floating mb-3">
+                                                            <input type="text" class="form-control" id="twilio_phone_number" name="twilio_phone_number" placeholder="Twilio Phone Number">
+                                                            <label for="twilio_phone_number">Twilio Phone Number</label>
+                                                            <div class="form-text">Enter in international format (e.g. +1234567890)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Email Channel Configuration -->
+                                <div id="email_config" class="channel-config-form mb-4 d-none">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-envelope text-primary me-2"></i>Email Configuration
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-floating mb-3">
+                                                        <input type="email" class="form-control" id="email_address" name="email_address" placeholder="Email Address">
+                                                        <label for="email_address">Email Address</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating mb-3">
+                                                        <select class="form-select" id="email_provider" name="email_provider">
+                                                            <option value="" selected disabled>Select provider</option>
+                                                            <option value="gmail">Gmail</option>
+                                                            <option value="outlook">Outlook</option>
+                                                            <option value="imap">IMAP</option>
+                                                            <option value="smtp">SMTP Custom</option>
+                                                        </select>
+                                                        <label for="email_provider">Email Provider</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <div class="form-floating mb-3">
+                                                        <input type="text" class="form-control" id="email_access_token" name="email_access_token" placeholder="Access Token">
+                                                        <label for="email_access_token">Access Token</label>
+                                                    </div>
+                                                </div>
+                                                
+                                                <!-- SMTP and IMAP settings (initially hidden, show based on provider selection) -->
+                                                <div id="custom_email_settings" class="col-12 d-none">
+                                                    <div class="row g-3">
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                <input type="text" class="form-control" id="smtp_server" name="smtp_server" placeholder="SMTP Server">
+                                                                <label for="smtp_server">SMTP Server</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                <input type="number" class="form-control" id="smtp_port" name="smtp_port" placeholder="SMTP Port">
+                                                                <label for="smtp_port">SMTP Port</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                <input type="text" class="form-control" id="imap_server" name="imap_server" placeholder="IMAP Server">
+                                                                <label for="imap_server">IMAP Server</label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-6">
+                                                            <div class="form-floating mb-3">
+                                                                <input type="number" class="form-control" id="imap_port" name="imap_port" placeholder="IMAP Port">
+                                                                <label for="imap_port">IMAP Port</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Messenger Channel Configuration -->
+                                <div id="messenger_config" class="channel-config-form mb-4 d-none">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0">
+                                                <i class="fab fa-facebook-messenger text-primary me-2"></i>Messenger Configuration
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-floating mb-3">
+                                                        <input type="text" class="form-control" id="page_id" name="page_id" placeholder="Page ID">
+                                                        <label for="page_id">Facebook Page ID</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating mb-3">
+                                                        <input type="text" class="form-control" id="page_name" name="page_name" placeholder="Page Name">
+                                                        <label for="page_name">Facebook Page Name</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <div class="form-floating mb-3">
+                                                        <input type="text" class="form-control" id="messenger_access_token" name="messenger_access_token" placeholder="Access Token">
+                                                        <label for="messenger_access_token">Page Access Token</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- SMS Channel Configuration -->
+                                <div id="sms_config" class="channel-config-form mb-4 d-none">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-sms text-warning me-2"></i>SMS Configuration
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <!-- Message shown when WhatsApp is also enabled -->
+                                            <div id="sms_whatsapp_shared_info" class="d-none">
+                                                <div class="alert alert-info">
+                                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                                    <span>SMS functionality uses the same Twilio configuration as WhatsApp. Since you've already configured WhatsApp, those settings will be used for SMS as well.</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Fields shown when WhatsApp is not enabled -->
+                                            <div id="sms_twilio_fields">
+                                                <div class="row g-3">
+                                                    <div class="col-md-12">
+                                                        <div class="form-floating mb-3">
+                                                            <input type="text" class="form-control" id="sms_twilio_account_sid" name="sms_twilio_account_sid" placeholder="Twilio Account SID">
+                                                            <label for="sms_twilio_account_sid">Twilio Account SID</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <div class="form-floating mb-3">
+                                                            <input type="text" class="form-control" id="sms_twilio_auth_token" name="sms_twilio_auth_token" placeholder="Twilio Auth Token">
+                                                            <label for="sms_twilio_auth_token">Twilio Auth Token</label>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-12">
+                                                        <div class="form-floating mb-3">
+                                                            <input type="text" class="form-control" id="sms_twilio_phone_number" name="sms_twilio_phone_number" placeholder="Twilio Phone Number">
+                                                            <label for="sms_twilio_phone_number">Twilio Phone Number</label>
+                                                            <div class="form-text">Enter in international format (e.g. +1234567890)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Web Chat Channel Configuration -->
+                                <div id="web_config" class="channel-config-form mb-4 d-none">
+                                    <div class="card">
+                                        <div class="card-header bg-light">
+                                            <h5 class="mb-0">
+                                                <i class="fas fa-globe text-info me-2"></i>Web Chat Configuration
+                                            </h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="alert alert-success">
+                                                <i class="bi bi-check-circle-fill me-2"></i>
+                                                <span>No additional configuration needed for Web Chat. You'll get an embed code after creating your chatbot.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="step-buttons">
+                                <button type="button" class="btn btn-outline-secondary prev-step"><i class="bi bi-arrow-left me-1"></i> Back</button>
+                                <button type="button" class="btn btn-primary next-step">Next <i class="bi bi-arrow-right ms-1"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Review & Submit -->
+                        <div class="form-step d-none" data-step="4">
+                            <h3 class="card-title mb-4">
+                                <i class="bi bi-check-circle text-primary me-2"></i>Review & Create
+                            </h3>
+                            
+                            <div class="review-section mb-4">
+                                <h5 class="review-heading">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    Basic Information
+                                </h5>
+                                <div class="review-data">
+                                    <div class="review-item">
+                                        <div class="review-label">Name</div>
+                                        <div class="review-value" id="review-name">My Chatbot</div>
+                                    </div>
+                                    <div class="review-item">
+                                        <div class="review-label">Description</div>
+                                        <div class="review-value" id="review-description">A helpful AI assistant</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="review-section mb-4">
+                                <h5 class="review-heading">
+                                    <i class="bi bi-brain me-2"></i>
+                                    AI Settings
+                                </h5>
+                                <div class="review-data">
+                                    <div class="review-item">
+                                        <div class="review-label">Provider</div>
+                                        <div class="review-value" id="review-provider">OpenAI</div>
+                                    </div>
+                                    <div class="review-item">
+                                        <div class="review-label">Model</div>
+                                        <div class="review-value" id="review-model">GPT-3.5 Turbo</div>
+                                    </div>
+                                    <div class="review-item">
+                                        <div class="review-label">Knowledge Base Only</div>
+                                        <div class="review-value" id="review-kb-only"><span class="badge bg-success">Enabled</span></div>
+                                    </div>
+                                    <div class="review-item">
+                                        <div class="review-label">Show Sources</div>
+                                        <div class="review-value" id="review-sources"><span class="badge bg-success">Enabled</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="review-section mb-4">
+                                <h5 class="review-heading">
+                                    <i class="bi bi-plug me-2"></i>
+                                    Channels
+                                </h5>
+                                <div class="review-data">
+                                    <div class="review-item">
+                                        <div class="review-label">Selected Channels</div>
+                                        <div class="review-channels" id="review-channels">
+                                            <div class="review-channel"><i class="bi bi-globe"></i> Website Widget</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="step-buttons">
+                                <button type="button" class="btn btn-outline-secondary prev-step"><i class="bi bi-arrow-left me-1"></i> Back</button>
+                                <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Create Chatbot</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Column - Help and Preview -->
+        <div class="col-lg-4">
+            <div class="card sticky-top mt-0" style="top: 90px;">
+                <div class="card-body p-4">
+                    <h5 class="card-title mb-3"><i class="bi bi-eye me-2"></i>Preview</h5>
+                    <div class="chatbot-preview">
+                        <div class="preview-header">
+                            <div class="d-flex align-items-center">
+                                <div class="preview-avatar me-2">
+                                    <div class="preview-avatar-text">AI</div>
+                                    <img style="display: none;" src="" alt="Chatbot Avatar">
+                                </div>
+                                <div>
+                                    <h6 class="preview-name mb-0">My Chatbot</h6>
+                                    <small class="text-muted">Just now</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="preview-body">
+                            <div class="preview-message-container">
+                                <div class="preview-bubble">
+                                    Hello! How can I help you today?
+                                </div>
+                            </div>
+                        </div>
+                        <div class="preview-message-bar">
+                            <div class="d-flex justify-content-between align-items-center border rounded p-2">
+                                <input type="text" class="form-control form-control-sm border-0" placeholder="Type your message..." disabled>
+                                <button class="btn btn-sm btn-primary ms-2" disabled><i class="bi bi-send"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/create_chatbot.js' %}"></script>
+{% endblock %} 

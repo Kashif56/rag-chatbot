@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 
 # Create your views here.
@@ -8,6 +9,13 @@ from django.contrib import messages
 
 def signup(request):
     redirect_url = request.GET.get('next')
+    if request.user.is_authenticated:
+        if redirect_url:
+            return redirect(redirect_url)
+        else:
+            redirect_url = request.META.get('HTTP_REFERER')
+            return redirect(redirect_url)   
+        
     if request.method == 'POST':
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
@@ -44,6 +52,13 @@ def signup(request):
 
 def login_page(request):
     redirect_url = request.GET.get('next')
+    if request.user.is_authenticated:
+        if redirect_url:
+            return redirect(redirect_url)
+        else:
+            redirect_url = request.META.get('HTTP_REFERER')
+            return redirect(redirect_url)
+    
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
@@ -61,3 +76,13 @@ def login_page(request):
         
     return render(request, 'accounts/login.html')
     
+
+@login_required
+def logout_page(request):
+    logout(request)
+    messages.success(request, 'You have been logged out successfully')
+    return redirect('core:index')
+
+
+
+

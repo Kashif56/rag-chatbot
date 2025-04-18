@@ -1,0 +1,493 @@
+{% extends 'common/base.html' %}
+{% load static %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-text">
+                <h1 class="hero-title">Revolutionize Customer Experience with <span class="text-gradient">Smart AI Chatbots</span></h1>
+                <p class="hero-subtitle">Enhance engagement, boost conversion rates, and provide 24/7 support with our AI-powered chatbot solution.</p>
+                <div class="hero-buttons">
+                    <a href="#" class="btn btn-primary btn-lg me-3 pulse-btn">Launch Your Bot</a>
+                    <a href="#" class="btn btn-outline-light btn-lg">Watch Demo</a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">98%</span>
+                        <span class="stat-label">Customer Satisfaction</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">24/7</span>
+                        <span class="stat-label">Support</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">+60%</span>
+                        <span class="stat-label">Response Rate</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 hero-image">
+                <div class="chatbot-avatar">    
+                    <div class="avatar-container">
+                        <div class="avatar-glow"></div>
+                        <img src="{% static 'images/chatbot-avatar.svg' %}" alt="AI Chatbot" class="img-fluid">
+                    </div>
+                    <div class="chat-bubble chat-bubble-1">
+                        <span>How can I help you today?</span>
+                    </div>
+                    <div class="chat-bubble chat-bubble-2">
+                        <span>I need information about your service</span>
+                    </div>
+                    <div class="chat-bubble chat-bubble-3">
+                        <span>I'd be happy to tell you more about our premium features!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="hero-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+        <div class="shape shape-4"></div>
+    </div>
+</section>
+
+<!-- Trusted By Section -->
+<section class="trusted-section">
+    <div class="container">
+        <h6 class="text-center mb-4">Trusted by innovative companies worldwide</h6>
+        <div class="trusted-logos">
+            <div class="trusted-logo"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Google_2015_logo.svg/1200px-Google_2015_logo.svg.png" alt="Company Logo"></div>
+            <div class="trusted-logo"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/Microsoft_logo.svg/1200px-Microsoft_logo.svg.png" alt="Company Logo"></div>
+            <div class="trusted-logo"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Salesforce_logo.svg/2560px-Salesforce_logo.svg.png" alt="Company Logo"></div>
+            <div class="trusted-logo"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/1200px-Netflix_2015_logo.svg.png" alt="Company Logo"></div>
+            <div class="trusted-logo"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Amazon_logo.svg/1200px-Amazon_logo.svg.png" alt="Company Logo"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="features-section" id="features">
+    <div class="container">
+        <div class="section-header text-center">
+            <h6 class="section-pre-title">Powerful Features</h6>
+            <h2 class="section-title">Transform Your <span class="text-gradient">Customer Support</span></h2>
+            <p class="section-subtitle">Discover how our AI-powered chatbot can revolutionize your customer engagement</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <h3 class="feature-title">Multi-Channel Support</h3>
+                    <p class="feature-text">Connect with customers on their preferred platforms - website, Facebook, WhatsApp, and more.</p>
+                    <div class="feature-hover">
+                        <a href="#" class="btn btn-sm btn-light">Learn More</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 class="feature-title">Personalized Responses</h3>
+                    <p class="feature-text">Leverage AI to deliver customized interactions based on user behavior and preferences.</p>
+                    <div class="feature-hover">
+                        <a href="#" class="btn btn-sm btn-light">Learn More</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-plug"></i>
+                    </div>
+                    <h3 class="feature-title">Easy Integrations</h3>
+                    <p class="feature-text">Seamlessly connect with your CRM, help desk, and other business tools with our API.</p>
+                    <div class="feature-hover">
+                        <a href="#" class="btn btn-sm btn-light">Learn More</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="feature-title">Real-time Insights</h3>
+                    <p class="feature-text">Monitor performance and customer sentiment with advanced analytics dashboard.</p>
+                    <div class="feature-hover">
+                        <a href="#" class="btn btn-sm btn-light">Learn More</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works-section" id="how-it-works">
+    <div class="container">
+        <div class="section-header text-center">
+            <h6 class="section-pre-title">Simple Process</h6>
+            <h2 class="section-title">How It <span class="text-gradient">Works</span></h2>
+            <p class="section-subtitle">Get your AI chatbot up and running in minutes</p>
+        </div>
+        <div class="timeline">
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-icon">
+                        <i class="fas fa-user-plus"></i>
+                    </div>
+                    <h3 class="timeline-title">Sign Up</h3>
+                    <p class="timeline-text">Create your account and choose a plan that fits your business needs.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-icon">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <h3 class="timeline-title">Customize Your Bot</h3>
+                    <p class="timeline-text">Design conversational flows and personalize your chatbot's appearance.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3 class="timeline-title">Integrate</h3>
+                    <p class="timeline-text">Connect your chatbot to your website and other platforms with a simple code snippet.</p>
+                </div>
+            </div>
+            <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="timeline-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3 class="timeline-title">Launch & Optimize</h3>
+                    <p class="timeline-text">Go live and continuously improve based on real-time analytics and feedback.</p>
+                </div>
+            </div>
+        </div>
+        <div class="text-center mt-5">
+            <a href="#" class="btn btn-primary">Get Started Now</a>
+        </div>
+    </div>
+    <div class="hiw-shapes">
+        <div class="hiw-shape hiw-shape-1"></div>
+        <div class="hiw-shape hiw-shape-2"></div>
+    </div>
+</section>
+
+<!-- Demo Section -->
+<section class="demo-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 order-lg-2">
+                <div class="demo-content">
+                    <h6 class="section-pre-title">Live Demo</h6>
+                    <h2 class="section-title">Experience the <span class="text-gradient">Future</span> of Customer Interaction</h2>
+                    <p class="mb-4">See how our AI chatbot engages with customers, answers questions, and solves problems in real-time.</p>
+                    <ul class="demo-features">
+                        <li><i class="fas fa-check-circle"></i> Natural language understanding</li>
+                        <li><i class="fas fa-check-circle"></i> Context awareness</li>
+                        <li><i class="fas fa-check-circle"></i> Sentiment analysis</li>
+                        <li><i class="fas fa-check-circle"></i> Multilingual support</li>
+                    </ul>
+                    <a href="#" class="btn btn-outline-primary mt-4">Schedule a Demo</a>
+                </div>
+            </div>
+            <div class="col-lg-6 order-lg-1">
+                <div class="demo-chat-window">
+                    <div class="chat-window-header">
+                        <div class="chat-avatar">
+                            <img src="https://cdn-icons-png.flaticon.com/512/4712/4712035.png" alt="Chatbot Avatar">
+                        </div>
+                        <div class="chat-info">
+                            <h5>NexusAI Assistant</h5>
+                            <span class="status">Online</span>
+                        </div>
+                    </div>
+                    <div class="chat-window-body">
+                        <div class="chat-message bot-message">
+                            <p>👋 Hi there! I'm your NexusAI assistant. How can I help you today?</p>
+                        </div>
+                        <div class="chat-message user-message">
+                            <p>I'm looking for information about your pricing plans.</p>
+                        </div>
+                        <div class="chat-message bot-message">
+                            <p>I'd be happy to help with that! We offer several plans:</p>
+                            <p>🔹 <strong>Free:</strong> Basic chatbot with limited features<br>
+                               🔹 <strong>Pro:</strong> $49/month with advanced AI capabilities<br>
+                               🔹 <strong>Enterprise:</strong> Custom pricing for large businesses</p>
+                            <p>Would you like me to provide more details about any specific plan?</p>
+                        </div>
+                        <div class="chat-message user-message">
+                            <p>What features come with the Pro plan?</p>
+                        </div>
+                        <div class="chat-typing">
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                            <span class="typing-dot"></span>
+                        </div>
+                    </div>
+                    <div class="chat-window-footer">
+                        <input type="text" class="chat-input" placeholder="Type your message...">
+                        <button class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Section -->
+<section class="pricing-section" id="pricing">
+    <div class="container">
+        <div class="section-header text-center">
+            <h6 class="section-pre-title">Simple Pricing</h6>
+            <h2 class="section-title">Choose Your <span class="text-gradient">Plan</span></h2>
+            <p class="section-subtitle">No hidden fees, no complicated contracts</p>
+        </div>
+        <div class="pricing-toggle text-center mb-5">
+            <span class="me-3">Monthly</span>
+            <label class="switch">
+                <input type="checkbox" id="billingToggle">
+                <span class="slider round"></span>
+            </label>
+            <span class="ms-3">Annual <span class="save-badge">Save 20%</span></span>
+        </div>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3 class="pricing-title">Free</h3>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount">0</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="pricing-subtitle">For individuals and small projects</p>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> Single chatbot</li>
+                            <li><i class="fas fa-check"></i> 1,000 messages/month</li>
+                            <li><i class="fas fa-check"></i> Website integration</li>
+                            <li><i class="fas fa-check"></i> Basic analytics</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Custom branding</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Advanced AI capabilities</li>
+                            <li class="disabled"><i class="fas fa-times"></i> Integrations</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer">
+                        <a href="#" class="btn btn-outline-primary btn-block">Get Started</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Popular</div>
+                    <div class="pricing-header">
+                        <h3 class="pricing-title">Pro</h3>
+                        <div class="pricing-price">
+                            <span class="currency">$</span>
+                            <span class="amount">49</span>
+                            <span class="period">/month</span>
+                        </div>
+                        <p class="pricing-subtitle">For growing businesses</p>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> 5 chatbots</li>
+                            <li><i class="fas fa-check"></i> 10,000 messages/month</li>
+                            <li><i class="fas fa-check"></i> Multi-channel integration</li>
+                            <li><i class="fas fa-check"></i> Advanced analytics</li>
+                            <li><i class="fas fa-check"></i> Custom branding</li>
+                            <li><i class="fas fa-check"></i> Advanced AI capabilities</li>
+                            <li><i class="fas fa-check"></i> Basic integrations</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer">
+                        <a href="#" class="btn btn-primary btn-block">Choose Pro</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="pricing-card">
+                    <div class="pricing-header">
+                        <h3 class="pricing-title">Enterprise</h3>
+                        <div class="pricing-price">
+                            <span class="custom-price">Custom</span>
+                        </div>
+                        <p class="pricing-subtitle">For large organizations</p>
+                    </div>
+                    <div class="pricing-body">
+                        <ul class="pricing-features">
+                            <li><i class="fas fa-check"></i> Unlimited chatbots</li>
+                            <li><i class="fas fa-check"></i> Unlimited messages</li>
+                            <li><i class="fas fa-check"></i> Multi-channel integration</li>
+                            <li><i class="fas fa-check"></i> Enterprise analytics</li>
+                            <li><i class="fas fa-check"></i> Custom branding</li>
+                            <li><i class="fas fa-check"></i> Advanced AI capabilities</li>
+                            <li><i class="fas fa-check"></i> Premium integrations</li>
+                            <li><i class="fas fa-check"></i> Dedicated support</li>
+                            <li><i class="fas fa-check"></i> SLA guarantees</li>
+                        </ul>
+                    </div>
+                    <div class="pricing-footer">
+                        <a href="#" class="btn btn-outline-primary btn-block">Contact Sales</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Testimonials Section -->
+<section class="testimonials-section" id="testimonials">
+    <div class="container">
+        <div class="section-header text-center">
+            <h6 class="section-pre-title">Success Stories</h6>
+            <h2 class="section-title">What Our <span class="text-gradient">Clients Say</span></h2>
+            <p class="section-subtitle">Hear from businesses that have transformed their customer interactions</p>
+        </div>
+        <div class="testimonial-carousel">
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"NexusAI transformed our customer support. We've seen a 45% reduction in response time and a significant increase in customer satisfaction scores."</p>
+                </div>
+                <div class="testimonial-person">
+                    <div class="testimonial-avatar">
+                        <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Testimonial Avatar">
+                    </div>
+                    <div class="testimonial-info">
+                        <h5 class="testimonial-name">Sarah Johnson</h5>
+                        <p class="testimonial-position">Head of Customer Success, TechCorp</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <p class="testimonial-text">"The implementation was seamless, and the AI capabilities are genuinely impressive. Our chatbot now handles 70% of inquiries without human intervention."</p>
+                </div>
+                <div class="testimonial-person">
+                    <div class="testimonial-avatar">
+                        <img src="https://randomuser.me/api/portraits/men/45.jpg" alt="Testimonial Avatar">
+                    </div>
+                    <div class="testimonial-info">
+                        <h5 class="testimonial-name">David Chen</h5>
+                        <p class="testimonial-position">CTO, E-commerce Solutions</p>
+                    </div>
+                </div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-content">
+                    <div class="testimonial-rating">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                    <p class="testimonial-text">"The ROI has been exceptional. Within 3 months, we've increased conversions by 28% and significantly reduced our support team's workload."</p>
+                </div>
+                <div class="testimonial-person">
+                    <div class="testimonial-avatar">
+                        <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="Testimonial Avatar">
+                    </div>
+                    <div class="testimonial-info">
+                        <h5 class="testimonial-name">Emily Rodriguez</h5>
+                        <p class="testimonial-position">Marketing Director, RetailGiant</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="cta-card">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h2 class="cta-title">Ready to Transform Your Customer Experience?</h2>
+                    <p class="cta-text">Join thousands of businesses using NexusAI to boost engagement and deliver exceptional support.</p>
+                </div>
+                <div class="col-lg-4 text-lg-end text-center mt-4 mt-lg-0">
+                    <a href="#" class="btn btn-light btn-lg me-3">Try For Free</a>
+                    <a href="#" class="btn btn-outline-light btn-lg">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Testimonial Carousel Initialization
+    document.addEventListener('DOMContentLoaded', function() {
+        // This would be replaced with actual carousel initialization code
+        // For example, using a library like Swiper.js
+        console.log('Testimonial carousel initialized');
+        
+        // Pricing toggle functionality
+        const toggle = document.getElementById('billingToggle');
+        if (toggle) {
+            toggle.addEventListener('change', function() {
+                // Logic to switch between monthly and annual pricing
+                console.log('Pricing toggle changed');
+            });
+        }
+        
+        // Animated elements
+        const animateElements = document.querySelectorAll('.feature-card, .timeline-item, .testimonial-card');
+        if ('IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('animated');
+                        observer.unobserve(entry.target);
+                    }
+                });
+            });
+            
+            animateElements.forEach(el => {
+                observer.observe(el);
+            });
+        } else {
+            // Fallback for browsers that don't support IntersectionObserver
+            animateElements.forEach(el => {
+                el.classList.add('animated');
+            });
+        }
+    });
+</script>
+{% endblock %} 
