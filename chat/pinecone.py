@@ -1,305 +1,344 @@
 from pinecone import Pinecone, ServerlessSpec
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_openai import OpenAIEmbeddings
+from langchain_google_vertexai import VertexAIEmbeddings
+from langchain_pinecone import PineconeVectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_experimental.text_splitter import SemanticChunker
+from langchain_community.document_loaders import TextLoader, DirectoryLoader, PyPDFLoader, Docx2txtLoader, UnstructuredURLLoader
+from langchain_community.document_loaders import WebBaseLoader
+from langchain_community.document_loaders import PlaywrightURLLoader
+from langchain_community.document_loaders import SeleniumURLLoader
+from langchain_core.documents import Document
+from langchain.chains import RetrievalQA
+from langchain_core.prompts import PromptTemplate
 import google.generativeai as genai
 from django.conf import settings
-import logging
-import random
+
 import os
 import uuid
 from dotenv import load_dotenv
+import urllib.request
+import urllib.error
+
+from bs4 import BeautifulSoup
+import requests
+from urllib.parse import urljoin, urlparse
 
 load_dotenv()
 
-GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
-genai.configure(api_key=GOOGLE_API_KEY)
-llm = genai.GenerativeModel('gemini-1.5-pro-latest')
-
-
-
 # Configuration
+GOOGLE_API_KEY = os.getenv('GOOGLE_API_KEY')
+PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 INDEX_NAME = "rag-chatbot"
-EMBEDDING_DIMENSION = 1024
-EMBEDDING_MODEL = "multilingual-e5-large"
+EMBEDDING_DIMENSION = 1536  # OpenAI embeddings are 1536 dimensions
+EMBEDDING_MODEL = "text-embedding-3-small"  # OpenAI embedding model
+HUGGINGFACE_MODEL = "multilingual-e5-large"  # HuggingFace model as fallback
+EMBEDDING_SOURCE = os.getenv('EMBEDDING_SOURCE', 'openai')  # 'openai', 'huggingface', or 'pinecone'
+GOOGLE_EMBEDDING_MODEL = "textembedding-gecko@latest"  # Google's embedding model
 
-def chunk_text(text, chunk_size=500, overlap=100):
+# Set User Agent for web requests
+os.environ["USER_AGENT"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+
+# Initialize Pinecone
+pc = Pinecone(api_key=PINECONE_API_KEY)
+
+def initialize_pinecone():
     """
-    Split text into overlapping chunks for processing.
+    Initialize the Pinecone index if it doesn't exist.
+    """
+    if INDEX_NAME not in pc.list_indexes().names():
+        pc.create_index(
+            name=INDEX_NAME,
+            dimension=EMBEDDING_DIMENSION,
+            metric="cosine",
+            spec=ServerlessSpec(cloud="aws", region="us-east-1")
+        )
+    return pc.Index(INDEX_NAME)
+
+
+
+
+def get_embeddings_model():
+    if EMBEDDING_SOURCE.lower() == 'openai':
+        return OpenAIEmbeddings(model=EMBEDDING_MODEL)
+    elif EMBEDDING_SOURCE.lower() == 'google':
+        return VertexAIEmbeddings(model_name=GOOGLE_EMBEDDING_MODEL)
+    else:  
+        return HuggingFaceEmbeddings(model_name=HUGGINGFACE_MODEL)
+
+
+
+def create_text_splitter():
+    embeddings = get_embeddings_model() 
+
+    chunker = SemanticChunker(
+        embeddings=embeddings,
+        breakpoint_threshold='percentile'
+    )
+
+    return chunker
+
+
+
+
+def load_documents(source, content=None, follow_links=False, max_depth=1, max_internal_links=5):
+    LOADER_MAPPING = {
+        '.txt': TextLoader,
+        '.pdf': PyPDFLoader,
+        '.docx': Docx2txtLoader,
+        '.doc': Docx2txtLoader, 
+        '.md': TextLoader,
+        '.json': TextLoader,
+    }
+    
+    # Handle URL
+    if source.startswith(('http://', 'https://')):
+        return scrape_url(
+            source, 
+            follow_links=follow_links, 
+            max_depth=max_depth, 
+            max_internal_links=max_internal_links
+        )
+    
+    # Handle raw text input
+    elif source.lower() == 'text' and content:
+        timestamp = uuid.uuid4()
+        return [Document(
+            page_content=content, 
+            metadata={"source": "user_input", "timestamp": str(timestamp)}
+        )]
+    
+    # Handle directory
+    elif os.path.isdir(source):
+        # Create a mapping of file extensions to glob patterns
+        glob_patterns = {
+            'pdf': '**/*.pdf',
+            'txt': '**/*.txt',
+            'md': '**/*.md',
+            'docx': '**/*.docx',
+            'doc': '**/*.doc',
+            'json': '**/*.json',
+        }
+        
+        all_documents = []
+        
+        # Load each document type separately
+        for doc_type, glob_pattern in glob_patterns.items():
+            try:
+                # Skip if no matching loader
+                if f'.{doc_type}' not in LOADER_MAPPING:
+                    continue
+                    
+                # Create loader for this document type
+                loader = DirectoryLoader(
+                    path=source,
+                    glob=glob_pattern,
+                    loader_cls=LOADER_MAPPING[f'.{doc_type}'],
+                    show_progress=True,
+                    use_multithreading=True
+                )
+                
+                # Load documents and add to collection
+                documents = loader.load()
+                all_documents.extend(documents)
+                print(f"Loaded {len(documents)} {doc_type} documents from {source}")
+            except Exception as e:
+                print(f"Error loading {doc_type} documents: {str(e)}")
+        
+        return all_documents
+    
+    # Handle single file
+    elif os.path.isfile(source):
+        ext = os.path.splitext(source)[1].lower()
+        
+        if ext not in LOADER_MAPPING or LOADER_MAPPING[ext] is None:
+            raise ValueError(f"Unsupported file type: {ext}")
+        
+        loader_class = LOADER_MAPPING[ext]
+        loader = loader_class(source)
+        documents = loader.load()
+        
+        return documents
+    
+    # Handle unsupported source
+    else:
+        raise ValueError(f"Unsupported source: {source}. Must be a file path, directory, URL, or 'text'.")
+
+
+
+def get_documents_text(documents):
+    """
+    Extract text content from a list of documents.
     
     Args:
-        text (str): Text to be chunked
-        chunk_size (int): Size of each chunk in words
-        overlap (int): Number of words to overlap between chunks
+        documents: List of Document objects
         
     Returns:
-        list: List of text chunks
+        String containing the combined text content
     """
-    words = text.split()
-    chunks = []
-    for i in range(0, len(words), chunk_size - overlap):
-        chunk = " ".join(words[i:i+chunk_size])
-        chunks.append(chunk)
-    return chunks
-
-
-class PineconeClient:
-    def __init__(self):
-        """Initialize Pinecone client and ensure index exists."""
-        try:
-            self.pc = Pinecone(api_key=settings.PINECONE_API_KEY)
-            self._ensure_index_exists()
-            self.index = self.pc.Index(INDEX_NAME)
-        except Exception as e:
-            raise
-
-    def _ensure_index_exists(self):
-        """Check if index exists and create it if it doesn't."""
-        try:
-            # List existing indexes
-            indexes = self.pc.list_indexes()
+    if not documents:
+        return ""
+    
+    # Extract text from each document
+    texts = []
+    for doc in documents:
+        if hasattr(doc, 'page_content') and doc.page_content:
+            texts.append(doc.page_content)
             
-            # Create index if it doesn't exist
-            if INDEX_NAME not in [index['name'] for index in indexes.get('indexes', [])]:
-                self.pc.create_index(
-                    name=INDEX_NAME,
-                    dimension=EMBEDDING_DIMENSION,
-                    metric="cosine",
-                    spec=ServerlessSpec(
-                        cloud="aws",
-                        region="us-east-1"
-                    )
-                )
-        except Exception as e:
-            
-            raise
+    # Combine with double newlines as separators
+    return "\n\n".join(texts)
 
-    def embeddings(self, data):
-        """
-        Generate embeddings for input data.
+
+def process_documents(documents):
+    """
+    Process documents to create chunks.
+    """
+    try:
+        text_splitter = create_text_splitter()
         
-        Args:
-            data (str or list): Text to embed
-            
-        Returns:
-            list: Embedding vectors
-        """
-        try:
-            embeddings = self.pc.inference.embed(
-                model=EMBEDDING_MODEL,
-                inputs=data,
-                parameters={"input_type": "passage", "truncate": "END"}
-            )
-            return embeddings
-        except Exception as e:
-            raise
-
-    def query(self, embedding, namespace="", top_k=3):
-        """
-        Query the index with an embedding.
+        chunks = []
+        for doc in documents:
+            doc_chunks = text_splitter.split_documents([doc])
+            chunks.extend(doc_chunks)
         
-        Args:
-            embedding: Vector embedding to query with
-            namespace (str): Namespace to query in
-            top_k (int): Number of results to return
-            
-        Returns:
-            dict: Query results
-        """
-        try:
-            # Query the index with the embedding
-            results = self.index.query(
-                namespace=namespace,
-                vector=embedding[0].values,
-                top_k=top_k,
-                include_values=False,
-                include_metadata=True
-            )
-            return results
-        except Exception as e:
-            return {"matches": []}
+        return chunks
+    except Exception as e:
+        fallback_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=100,
+            length_function=len,
+            separators=["\n\n", "\n", " ", ""]
+        )
+        return fallback_splitter.split_documents(documents)
 
-    def upsert(self, data, embedding_obj, namespace="", chunk_text=None):
-        """
-        Upsert vectors to the index.
+
+
+def upsert_documents(documents, namespace=None):
+    embeddings = get_embeddings_model()
+    
+    vector_store = PineconeVectorStore.from_documents(
+        documents=documents,
+        embedding=embeddings,
+        index_name=INDEX_NAME,
+        namespace=namespace
+    )
+    
+    return vector_store
+
+def create_retriever(namespace=None):
+    embeddings = get_embeddings_model()
+    
+
+    vector_store = PineconeVectorStore(
+        index_name=INDEX_NAME,
+        embedding=embeddings,
+        namespace=namespace
+    )
+    
+    return vector_store.as_retriever(search_kwargs={"k": 5})
+
+def scrape_url(url, follow_links=False, max_depth=1, max_internal_links=20, dynamic_rendering=False):
+
+
+    all_documents = []
+    visited_urls = set()
+    url_contents = {}  # Store URL to content mapping
+    
+    def is_internal_link(base_url, link):
+        base_domain = urlparse(base_url).netloc
+        link_domain = urlparse(link).netloc
+        return base_domain == link_domain or not link_domain  # Empty netloc means relative link
+    
+    def extract_internal_links(base_url, html_content):
+        soup = BeautifulSoup(html_content, 'html.parser')
+        internal_links = []
         
-        Args:
-            data (dict): Document data with at least id and metadata
-            embedding_obj: Vector embeddings to store
-            namespace (str): Namespace to store in
-            chunk_text (str, optional): The actual text of the chunk to be stored
-        """
+        for a_tag in soup.find_all('a', href=True):
+            link = a_tag['href']
+            # Convert relative URLs to absolute
+            absolute_link = urljoin(base_url, link)
+            # Only include internal links and not the base URL itself
+            if is_internal_link(base_url, absolute_link) and absolute_link != base_url:
+                internal_links.append(absolute_link)
+                
+        links = list(set(internal_links))[:max_internal_links]  # Deduplicate and limit
+        print(f"Found {len(links)} internal links on {base_url}")
+        return links
+    
+    def scrape_single_url(url, depth=0):
+        if url in visited_urls or depth > max_depth:
+            return []
+        
+        print(f"Scraping URL: {url}")
+        visited_urls.add(url)
+        documents = []
+        content = ""
+        
         try:
-            vector_id = data.get('id', str(uuid.uuid4()))
-            metadata = data.get("metadata", {})
-            if chunk_text:
-                metadata["text_content"] = chunk_text
-            
-            if "chunk" in data and data["chunk"]:
-                metadata["text_content"] = data["chunk"]
-            
-            for field in ["title", "description", "source", "source_name", "page_title", "page_url"]:
-                if field in data and field not in metadata:
-                    metadata[field] = data[field]
-            
-            embedding_values = None
-            
-            if hasattr(embedding_obj, '__class__') and embedding_obj.__class__.__name__ == 'EmbeddingsList':
-                if len(embedding_obj) > 0:
-                    embedding_values = embedding_obj[0].values
-            # Handle dictionary with 'values' key
-            elif hasattr(embedding_obj, 'get') and embedding_obj.get('values'):
-                embedding_values = embedding_obj.get('values')
-            # Handle object with values attribute
-            elif hasattr(embedding_obj, 'values'):
-                embedding_values = embedding_obj.values
-            # Handle list of embeddings objects
-            elif isinstance(embedding_obj, list) and len(embedding_obj) > 0:
-                if hasattr(embedding_obj[0], 'values'):
-                    embedding_values = embedding_obj[0].values
-            
-            vector_data = {
-                "id": vector_id,
-                "values": embedding_values,  
-                "metadata": metadata
+            # Use basic requests with BeautifulSoup - simplest and most reliable method
+            headers = {
+                'User-Agent': os.environ.get("USER_AGENT", 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36')
             }
             
-          
-            self.index.upsert(vectors=[vector_data], namespace=namespace)
-            return True
+            print(f"Fetching {url} with requests and BeautifulSoup")
+            response = requests.get(url, headers=headers, timeout=15)
+            response.raise_for_status()
+            
+            html_content = response.text
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # Remove script and style elements
+            for script in soup(["script", "style", "nav", "footer", "header"]):
+                script.extract()
+            
+            # Get text content
+            text = soup.get_text(separator='\n', strip=True)
+            
+            # Clean up text: remove extra whitespace and empty lines
+            lines = (line.strip() for line in text.splitlines())
+            text = '\n'.join(line for line in lines if line)
+            
+            if text.strip():
+                print(f"Successfully fetched and parsed {url}")
+                documents = [Document(page_content=text, metadata={"source": url})]
+                content = text
+                url_contents[url] = text  # Store the URL content mapping
+            else:
+                print(f"No text content found in {url}")
+        
         except Exception as e:
+            print(f"Error scraping {url}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return []
             
-            return False
-
-    def batch_upsert_chunks(self, chunks, data_source_id, user_id, source_type, source_name, namespace=""):
-        """
-        Upsert a batch of text chunks with proper metadata.
-        
-        Args:
-            chunks (list): List of text chunks to embed and store
-            data_source_id (str): ID of the data source
-            user_id (str): ID of the user
-            source_type (str): Type of source (url, pdf, etc.)
-            source_name (str): Name of the source
-            namespace (str): Namespace to store in
-            
-        Returns:
-            bool: Success or failure
-        """
-        try:
-            successful_upserts = 0
-            
-            # First, generate all embeddings at once for efficiency
-            all_embeddings = self.embeddings(chunks)
-            
-            # Check if we got valid embeddings
-            if not all_embeddings or len(all_embeddings) != len(chunks):
+        # Follow internal links if requested
+        if follow_links and depth < max_depth and content:
+            try:
+                internal_links = extract_internal_links(url, html_content)
                 
-                return False
-            
-            # Process chunks with their corresponding embeddings
-            for chunk_idx, (chunk, embedding) in enumerate(zip(chunks, all_embeddings)):
-                # Generate a unique ID for this chunk
-                chunk_id = f"{data_source_id}_{chunk_idx}_{uuid.uuid4().hex[:8]}"
+                for link in internal_links:
+                    if len(visited_urls) >= max_internal_links + 1:  # +1 for the original URL
+                        print(f"Reached max internal links limit ({max_internal_links})")
+                        break
+                    print(f"Following internal link: {link}")
+                    link_documents = scrape_single_url(link, depth + 1)
+                    documents.extend(link_documents)
+            except Exception as e:
+                print(f"Error following links from {url}: {str(e)}")
                 
-                # Prepare metadata
-                chunk_data = {
-                    "id": chunk_id,
-                    "metadata": {
-                        "data_source_id": str(data_source_id),
-                        "user_id": str(user_id),
-                        "source_type": source_type,
-                        "source_name": source_name,
-                        "chunk_index": chunk_idx,
-                        "total_chunks": len(chunks),
-                        "chunk_id": chunk_id,
-                        "text_content": chunk  # Store the actual text content
-                    }
-                }
-                
-                # Upsert the chunk
-                if self.upsert(chunk_data, embedding, namespace=namespace):
-                    successful_upserts += 1
-                
-            return successful_upserts > 0
-        except Exception as e:
+        if documents:
+            print(f"Successfully scraped {url}, extracted {len(documents)} documents")
+        else:
+            print(f"Failed to extract any documents from {url}")
             
-            return False
-
-def generate_response(contexts, query):
-    """
-    Generate a response to a user query based on retrieved contexts.
-    
-    Args:
-        contexts (list): List of text chunks retrieved from the knowledge base
-        query (str): User's question
+        return documents
         
-    Returns:
-        str: Generated response
-    """
-    # Format contexts for better readability
-    formatted_contexts = ""
-    for i, context in enumerate(contexts, 1):
-        # Extract text content from context object or dictionary
-        text = ""
-        if isinstance(context, dict) and 'metadata' in context:
-            if 'text_content' in context['metadata']:
-                text = context['metadata']['text_content']
-            elif 'text' in context['metadata']:
-                text = context['metadata']['text']
-        elif hasattr(context, 'metadata') and hasattr(context.metadata, 'get'):
-            text = context.metadata.get('text_content', context.metadata.get('text', ''))
-        elif isinstance(context, str):
-            text = context
-            
-        # Include source information if available
-        source_info = ""
-        if isinstance(context, dict) and 'metadata' in context:
-            if 'source' in context['metadata']:
-                source_info = f" (Source: {context['metadata']['source']})"
-            elif 'source_name' in context['metadata']:
-                source_info = f" (Source: {context['metadata']['source_name']})"
-            
-        formatted_contexts += f"CONTEXT {i}{source_info}:\n{text}\n\n"
-
-    prompt = f"""
-    You are an expert conversationalist and knowledge specialist. Answer the user's question in a completely natural, human way.
-    
-    I've provided some information below that you should use to answer the question, but your response should sound like a knowledgeable person speaking naturally - not like you're referencing any provided information.
-    
-    INFORMATION:
-    {formatted_contexts}
-    
-    CRITICAL INSTRUCTIONS:
-    1. NEVER mention "context", "provided information", "text", "document", or use phrases like "based on the information" or "according to the text".
-    2. Answer directly and conversationally as if you inherently know this information.
-    3. Don't start with "The answer is..." or "To answer your question..."
-    4. Speak naturally like a human expert would in conversation.
-    5. If you don't have enough information, respond naturally about what you do know and acknowledge any limitations without referring to "provided contexts".
-    6. Maintain a warm, helpful tone while being accurate and precise with facts, dates, and numbers.
-    7. If there are different perspectives, present them as a thoughtful human would, weighing options rather than just listing what different "sources" say.
-    8. For complex answers, use natural paragraph breaks as a human would.
-    9. NEVER EVER say "I don't have information beyond what was provided" or similar phrases.
-    10. If you're uncertain, say something like "I'm not entirely sure about that specific detail" instead of referring to limitations in the provided information.
-    
-    USER QUESTION: {query}
-    
-    YOUR NATURAL HUMAN RESPONSE:
-    """
-    
-    # Generate response using the LLM
-    try:
-        response = llm.generate_content(prompt)
-        
-        # Post-process to remove any remaining references to "contexts" or "provided information"
-        text_response = response.text.strip()
-        text_response = text_response.replace("Based on the information provided, ", "")
-        text_response = text_response.replace("According to the provided context, ", "")
-        text_response = text_response.replace("Based on the context, ", "")
-        text_response = text_response.replace("From the information provided, ", "")
-        text_response = text_response.replace("The context indicates that ", "")
-        text_response = text_response.replace("The provided information shows that ", "")
-        text_response = text_response.replace("According to the context, ", "")
-        
-        return text_response
-    except Exception as e:
-        return "I'm not entirely sure about that. Could you try asking in a different way?"
+    # Start scraping from the initial URL
+    result = scrape_single_url(url)
+    print(f"Completed scraping of {url}: found {len(result)} total documents")
+    return result, url_contents
 
 

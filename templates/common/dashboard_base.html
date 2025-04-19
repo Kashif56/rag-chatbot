@@ -83,10 +83,13 @@
             <div class="sidebar-menu">
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link active" href="{% url 'kb:dashboard' %}"><i class="fas fa-tachometer-alt me-2"></i><span class="nav-text">Dashboard</span></a>
+                        <a class="nav-link active" href="{% url 'chat:dashboard' %}"><i class="fas fa-tachometer-alt me-2"></i><span class="nav-text">Dashboard</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'kb:create_chatbot_page' %}"><i class="fas fa-robot me-2"></i><span class="nav-text">Create Chatbot</span></a>
+                        <a class="nav-link" href="{% url 'chat:create_chatbot_page' %}"><i class="fas fa-robot me-2"></i><span class="nav-text">Create Chatbot</span></a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'kb:knowledge_base' %}"><i class="fas fa-book me-2"></i><span class="nav-text">Knowledge Base</span></a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#"><i class="fas fa-comments me-2"></i><span class="nav-text">Conversations</span></a>

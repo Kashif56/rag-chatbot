@@ -74,9 +74,9 @@ class EmailChannel(models.Model):
     access_token = models.TextField()
     refresh_token = models.TextField(blank=True, null=True)
     smtp_server = models.CharField(max_length=255, blank=True, null=True)
-    smtp_port = models.IntegerField(blank=True, null=True)
+    smtp_port = models.CharField(max_length=255, blank=True, null=True)
     imap_server = models.CharField(max_length=255, blank=True, null=True)
-    imap_port = models.IntegerField(blank=True, null=True)
+    imap_port = models.CharField(max_length=255, blank=True, null=True)
     last_synced = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

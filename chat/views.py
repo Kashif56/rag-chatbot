@@ -1,76 +1,523 @@
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.db import transaction
 import json
-import logging
-from .pinecone import PineconeClient, generate_response
-from kb.models import DataSource  # Import DataSource model to get original text
+from chat.models import Chatbot, Channel, EmailChannel, WhatsAppChannel, MessengerChannel
+from django.db.utils import OperationalError
 
-# Configure logging
-logger = logging.getLogger(__name__)
+
 
 @login_required
-def chat_view(request):
-    return render(request, 'chat/chat.html')
+def dashboard(request):
+    chatbots = Chatbot.objects.filter(user=request.user)
+    return render(request, 'dashboard/dashboard.html', {'chatbots': chatbots})
+
+
 
 @login_required
-@require_http_methods(["POST"])
-def send_message(request):
+def create_chatbot_page(request):
+    return render(request, 'dashboard/create_chatbot.html')
+
+
+@login_required
+@require_POST
+@csrf_exempt
+@transaction.atomic
+def add_chatbot(request):
     try:
         data = json.loads(request.body)
-        user_message = data.get('message', '')
+        name = data.get('name')
+        description = data.get('description', '')
+        prompt = data.get('prompt', '')
+        llm_provider = data.get('llm_provider')
+        llm_model = data.get('llm_model')
         
-        if not user_message:
-            return JsonResponse({'error': 'No message provided'}, status=400)
-        
-        pc = PineconeClient()
-        
-        # Generate embedding for the user query
-        query_embedding = pc.embeddings([user_message])
-        
-        # Search for relevant content
-        results = pc.query(
-            embedding=query_embedding,
-            namespace=f"{request.user.username}",
-            top_k=5
+        # Basic validation
+        if not llm_provider or not llm_model:
+            return JsonResponse({
+                'success': False,
+                'error': 'LLM provider and model are required'
+            }, status=400)
+
+        if not name:
+            name = "New Chatbot"
+
+        # Create the chatbot
+        chatbot = Chatbot.objects.create(
+            user=request.user,
+            name=name,
+            description=description,
+            prompt=prompt,
+            llm_provider=llm_provider,
+            llm_model=llm_model
         )
+
+        # Process channels
+        channels = data.get('channels', [])
         
-        # Extract contexts from the search results
-        contexts = []
-        
-        for match in results.get('matches', []):
-            if match.get('score', 0) > 0.5:  # Only use high-relevance matches
-                metadata = match.get('metadata', {})
+        for channel_data in channels:
+            # Validate channel data
+            if 'type' not in channel_data:
+                continue
                 
-                # First check for the text_content field which should be there now
-                if 'text_content' in metadata:
-                    context = metadata['text_content']
-                    
-                    # Add source information if available
-                    if 'source_name' in metadata:
-                        context += f"\nSource: {metadata['source_name']}"
-                    
-                    # Add page title information if available
-                    if 'page_title' in metadata:
-                        context += f"\nPage Title: {metadata['page_title']}"
-                    
-                    contexts.append(context)
-                    continue
-                
-                # Fallback to older fields or database retrieval if needed
-                if 'chunk' in metadata:
-                    contexts.append(metadata['chunk'])
-                    continue
-                    
-       
-        if contexts:
-            bot_response = generate_response(contexts, user_message)
-        else:
-            bot_response = "I don't have enough information to answer that question. Please try asking something related to the documents you've uploaded."
+            channel = Channel.objects.create(
+                chatbot=chatbot,
+                channel_type=channel_data['type']
+            )
+            
+            if channel_data['type'] == 'email':
+                EmailChannel.objects.create(
+                    channel=channel,
+                    email_address=channel_data.get('email_address', None),
+                    provider=channel_data.get('provider', None),
+                    access_token=channel_data.get('access_token', None),
+                    refresh_token=channel_data.get('refresh_token', None),
+                    smtp_server=channel_data.get('smtp_server', None),
+                    smtp_port=channel_data.get('smtp_port', None),
+                    imap_server=channel_data.get('imap_server', None)
+                )
+            elif channel_data['type'] == 'whatsapp' or channel_data['type'] == 'sms':
+                WhatsAppChannel.objects.create(
+                    channel=channel,
+                    twilio_account_sid=channel_data.get('twilio_account_sid', ''),
+                    twilio_auth_token=channel_data.get('twilio_auth_token', ''),
+                    twilio_phone_number=channel_data.get('twilio_phone_number', '')
+                )
+            elif channel_data['type'] == 'messenger':
+                MessengerChannel.objects.create(
+                    channel=channel,
+                    page_id=channel_data.get('page_id', ''),
+                    page_name=channel_data.get('page_name', ''),
+                    access_token=channel_data.get('access_token', '')
+                )
+
+        return JsonResponse({
+            'success': True,
+            'chatbot': chatbot.chatbot_id
+        })
         
-        return JsonResponse({'response': bot_response})
+    except json.JSONDecodeError:
+        print("Invalid JSON data")
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
         
     except Exception as e:
-        logger.error(f"Error processing message: {str(e)}", exc_info=True)
-        return JsonResponse({'error': 'An error occurred while processing your message'}, status=500)
+        print(f"Error creating chatbot: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred'
+        }, status=500)
+
+
+
+
+@login_required
+def edit_chatbot_page(request, chatbot_id):
+    chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
+    channels = Channel.objects.filter(chatbot=chatbot)
+    channels_data = []
+    for channel in channels:
+        if channel.channel_type == 'email':
+            email_config = EmailChannel.objects.get(channel=channel)
+            if email_config.provider == 'gmail' or email_config.provider == 'outlook':
+                channels_data.append({
+                    'channel_type': channel.get_channel_type_display(),
+                    'channel_id': channel.channel_id,
+                    'email_address': email_config.email_address,
+                    'provider': email_config.provider,
+                    'access_token': email_config.access_token,
+                    'refresh_token': email_config.refresh_token,
+                })
+ 
+            elif email_config.provider == 'smtp' or email_config.provider == 'imap':
+                channels_data.append({
+                    'channel_type': channel.get_channel_type_display(),
+                    'channel_id': channel.channel_id,
+                    'email_address': email_config.email_address,
+                    'provider': email_config.provider,
+                    'smtp_server': email_config.smtp_server,
+                    'smtp_port': email_config.smtp_port,
+                    'imap_server': email_config.imap_server,
+                    'imap_port': email_config.imap_port,
+                })
+            
+        elif channel.channel_type == 'whatsapp' or channel.channel_type == 'sms':
+            whatsapp_config = WhatsAppChannel.objects.get(channel=channel)
+            channels_data.append({
+                'channel_type': channel.get_channel_type_display(),
+                'channel_id': channel.channel_id,
+                'twilio_account_sid': whatsapp_config.twilio_account_sid,
+                'twilio_auth_token': whatsapp_config.twilio_auth_token,
+                'twilio_phone_number': whatsapp_config.twilio_phone_number,
+            })
+        elif channel.channel_type == 'messenger':
+            messenger_config = MessengerChannel.objects.get(channel=channel)
+            channels_data.append({
+                'channel_type': channel.get_channel_type_display(),
+                'channel_id': channel.channel_id,
+                'page_id': messenger_config.page_id,
+                'page_name': messenger_config.page_name,
+                'access_token': messenger_config.access_token,
+            })
+            
+    
+
+    
+    context = {
+        'chatbot': chatbot,
+        'channels': channels_data,
+    }
+    
+    return render(request, 'dashboard/chatbot_detail.html', context)
+
+
+@login_required
+@require_POST
+@csrf_exempt
+@transaction.atomic
+def update_chatbot(request, chatbot_id):
+    try:
+        data = json.loads(request.body)
+        chatbot_id = data.get('chatbot_id')
+        name = data.get('name')
+        description = data.get('description', '')
+        prompt = data.get('prompt', '')
+        llm_provider = data.get('llm_provider')
+        llm_model = data.get('llm_model')
+
+        chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
+        chatbot.name = name
+        chatbot.description = description
+        chatbot.prompt = prompt
+        chatbot.llm_provider = llm_provider
+        chatbot.llm_model = llm_model
+        chatbot.save()
+
+        # Process channels
+        channels = data.get('channels', [])
+        
+        for channel_data in channels:
+            # Validate channel data
+            if 'type' not in channel_data:
+                continue
+                
+            channel = Channel.objects.get(chatbot=chatbot, channel_type=channel_data['type'])
+            
+            if channel_data['type'] == 'email':
+                EmailChannel.objects.create(
+                    channel=channel,
+                    email_address=channel_data.get('email_address', None),
+                    provider=channel_data.get('provider', None),
+                    access_token=channel_data.get('access_token', None),
+                    refresh_token=channel_data.get('refresh_token', None),
+                    smtp_server=channel_data.get('smtp_server', None),
+                    smtp_port=channel_data.get('smtp_port', None),
+                    imap_server=channel_data.get('imap_server', None)
+                )
+            elif channel_data['type'] == 'whatsapp' or channel_data['type'] == 'sms':
+                WhatsAppChannel.objects.create(
+                    channel=channel,
+                    twilio_account_sid=channel_data.get('twilio_account_sid', ''),
+                    twilio_auth_token=channel_data.get('twilio_auth_token', ''),
+                    twilio_phone_number=channel_data.get('twilio_phone_number', '')
+                )
+            elif channel_data['type'] == 'messenger':
+                MessengerChannel.objects.create(
+                    channel=channel,
+                    page_id=channel_data.get('page_id', ''),
+                    page_name=channel_data.get('page_name', ''),
+                    access_token=channel_data.get('access_token', '')
+                )
+
+        return JsonResponse({
+            'success': True,
+            'chatbot': chatbot.chatbot_id
+        })
+
+    except Exception as e:
+        print(f"Error updating chatbot: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred'
+        }, status=500)
+
+
+
+@login_required
+@require_POST
+@csrf_exempt
+@transaction.atomic
+def update_channel(request, channel_id):
+    try:
+        data = json.loads(request.body)
+        channel_type = data.get('channel_type')
+        channel = Channel.objects.get(channel_id=channel_id)
+        if channel_type.lower() == 'email':
+            email_address = data.get('email_address')
+            provider = data.get('provider')
+            access_token = data.get('access_token')
+            refresh_token = data.get('refresh_token')
+            smtp_server = data.get('smtp_server')
+            smtp_port = data.get('smtp_port')
+            imap_server = data.get('imap_server')
+            imap_port = data.get('imap_port')
+        elif channel_type.lower() == 'whatsapp' or channel_type.lower() == 'sms':
+            twilio_account_sid = data.get('twilio_account_sid')
+            twilio_auth_token = data.get('twilio_auth_token')
+            twilio_phone_number = data.get('twilio_phone_number')
+        elif channel_type.lower() == 'messenger':
+            page_id = data.get('page_id')
+            page_name = data.get('page_name')
+            access_token = data.get('access_token')
+        
+        channel.channel_type = channel_type.lower()
+        channel.save()
+        
+        if channel_type.lower() == 'email':
+            email_config = channel.email_config
+            email_config.email_address = email_address
+            email_config.provider = provider
+            email_config.access_token = access_token
+            email_config.refresh_token = refresh_token
+            email_config.smtp_server = smtp_server
+            email_config.smtp_port = smtp_port
+            email_config.imap_server = imap_server
+            email_config.imap_port = imap_port
+            email_config.save()
+        elif channel_type.lower() == 'whatsapp' or channel_type.lower() == 'sms':
+            whatsapp_config = channel.whatsapp_config
+            whatsapp_config.twilio_account_sid = twilio_account_sid
+            whatsapp_config.twilio_auth_token = twilio_auth_token
+            whatsapp_config.twilio_phone_number = twilio_phone_number
+            whatsapp_config.save()
+        elif channel_type.lower() == 'messenger':
+            messenger_config = channel.messenger_config
+            messenger_config.page_id = page_id
+            messenger_config.page_name = page_name
+            messenger_config.access_token = access_token
+            messenger_config.save()
+
+        return JsonResponse({
+            'success': True,
+            'channel': channel.channel_id
+        })
+            
+    
+    except Exception as e:
+        print(f"Error updating channel: {str(e)}")
+        return JsonResponse({
+            'success': False,
+            'error': 'An unexpected error occurred'
+        }, status=500)
+
+@login_required
+@require_POST
+@csrf_exempt
+@transaction.atomic
+def add_channel(request, chatbot_id):
+    try:
+        # Get request data
+        if request.content_type == 'application/json':
+            data = json.loads(request.body)
+        else:
+            data = request.POST
+
+        # Debug log
+        print(f"Adding channel with data: {data}")
+        
+        # Get chatbot
+        chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
+        channel_type = data.get('channel_type')
+        
+        # Initialize variables to avoid NameError
+        email_address = provider = access_token = refresh_token = smtp_server = smtp_port = imap_server = imap_port = None
+        twilio_account_sid = twilio_auth_token = twilio_phone_number = None
+        page_id = page_name = None
+        
+        # Get channel-specific data
+        if channel_type and channel_type.lower() == 'email':
+            email_address = data.get('email_address')
+            provider = data.get('provider')
+            access_token = data.get('access_token')
+            refresh_token = data.get('refresh_token', '')  # Default to empty string if not provided
+            smtp_server = data.get('smtp_server', '')
+            smtp_port = data.get('smtp_port', '')
+            imap_server = data.get('imap_server', '')
+            imap_port = data.get('imap_port', '')
+        
+        elif channel_type and (channel_type.lower() == 'whatsapp' or channel_type.lower() == 'sms'):
+            twilio_account_sid = data.get('twilio_account_sid')
+            twilio_auth_token = data.get('twilio_auth_token')
+            twilio_phone_number = data.get('twilio_phone_number')
+        
+        elif channel_type and channel_type.lower() == 'messenger':
+            page_id = data.get('page_id')
+            page_name = data.get('page_name')
+            access_token = data.get('access_token')
+        
+        # Check if channel type is valid
+        if not channel_type:
+            return JsonResponse({
+                'success': False,
+                'error': 'Channel type is required'
+            }, status=400)
+            
+        # Check if channel already exists
+        if Channel.objects.filter(chatbot=chatbot, channel_type=channel_type).exists():
+            return JsonResponse({
+                'success': False,
+                'error': f'{channel_type} channel already exists for this chatbot'
+            }, status=400)
+        
+        # Create channel
+        channel = Channel.objects.create(
+            chatbot=chatbot,
+            channel_type=channel_type  # Store the original channel_type value
+        )
+        
+        # Normalize channel type for comparison
+        channel_type_lower = channel_type.lower()
+        
+        # Create channel-specific record
+        if channel_type_lower == 'email':
+            if not email_address or not provider:
+                channel.delete()  # Clean up the channel if data is incomplete
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Email address and provider are required for Email channel'
+                }, status=400)
+                
+            EmailChannel.objects.create(
+                channel=channel,
+                email_address=email_address,
+                provider=provider,
+                access_token=access_token or '',
+                refresh_token=refresh_token or '',
+                smtp_server=smtp_server or '',
+                smtp_port=smtp_port or '',
+                imap_server=imap_server or '',
+                imap_port=imap_port or ''
+            )
+            
+        elif channel_type_lower == 'whatsapp' or channel_type_lower == 'sms':
+            if not twilio_account_sid or not twilio_phone_number:
+                channel.delete()  # Clean up the channel if data is incomplete
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Twilio Account SID and Phone Number are required'
+                }, status=400)
+                
+            WhatsAppChannel.objects.create(
+                channel=channel,
+                twilio_account_sid=twilio_account_sid,
+                twilio_auth_token=twilio_auth_token or '',
+                twilio_phone_number=twilio_phone_number
+            )
+            
+        elif channel_type_lower == 'messenger':
+            if not page_id or not access_token:
+                channel.delete()  # Clean up the channel if data is incomplete
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Page ID and Access Token are required for Messenger channel'
+                }, status=400)
+                
+            MessengerChannel.objects.create(
+                channel=channel,
+                page_id=page_id,
+                page_name=page_name or '',
+                access_token=access_token
+            )
+        
+        messages.success(request, f'{channel_type} channel added successfully')
+
+        print(f'{channel_type} channel added successfully')
+        
+        return JsonResponse({
+            'success': True,
+            'channel_id': str(channel.channel_id),
+            'message': f'{channel_type} channel added successfully'
+        })
+            
+    except Chatbot.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Chatbot not found'
+        }, status=404)
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Invalid JSON data'
+        }, status=400)
+    except OperationalError as e:
+        # Handle database lock errors specifically
+        print(f"Database operational error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': 'Database is currently busy. Please try again in a moment.'
+        }, status=503)  # Service Unavailable
+    except Exception as e:
+        print(f"Error adding channel: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': f'An unexpected error occurred: {str(e)}'
+        }, status=500)
+
+
+
+@login_required
+@transaction.atomic
+def delete_channel(request, channel_id):
+    try:
+        # Get channel with appropriate locking
+        channel = Channel.objects.select_for_update().get(channel_id=channel_id)
+        
+        # Store info for response before deletion
+        channel_id_str = str(channel.channel_id)
+        channel_type = channel.channel_type
+        
+        # Delete the channel
+        channel.delete()
+        
+        # Add success message
+        messages.success(request, f'{channel_type} channel deleted successfully')
+        
+        # Return success response
+        return JsonResponse({
+            'success': True,
+            'channel_id': channel_id_str,
+            'message': f'{channel_type} channel deleted successfully'
+        })
+    except Channel.DoesNotExist:
+        return JsonResponse({
+            'success': False,
+            'error': 'Channel not found'
+        }, status=404)
+    except OperationalError as e:
+        # Handle database lock errors
+        print(f"Database operational error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': 'Database is currently busy. Please try again in a moment.'
+        }, status=503)  # Service Unavailable
+    except Exception as e:
+        print(f"Error deleting channel: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return JsonResponse({
+            'success': False,
+            'error': f'An unexpected error occurred: {str(e)}'
+        }, status=500)
+

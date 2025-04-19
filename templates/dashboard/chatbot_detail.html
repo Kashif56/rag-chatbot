@@ -11,13 +11,7 @@
 <div class="chatbot-detail-container px-4 px-lg-5">
     <div class="row mb-4">
         <div class="col-md-9">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="/dashboard/chatbots/">Chatbots</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">{{ chatbot.name }}</li>
-                </ol>
-            </nav>
-            <h1 class="page-title display-5 fw-bold mt-2">{{ chatbot.name }}</h1>
+           
         </div>
         <div class="col-md-3 text-md-end mt-3 mt-md-0 d-flex justify-content-end align-items-start">
             <button type="button" class="btn btn-primary btn-save me-2">
@@ -33,7 +27,7 @@
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
         <div id="successToast" class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">
+                <div class="toast-body" id="successToastMessage">
                     <i class="fas fa-check-circle me-2"></i> Changes saved successfully!
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
@@ -42,7 +36,7 @@
         
         <div id="errorToast" class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
-                <div class="toast-body">
+                <div class="toast-body" id="errorToastMessage">
                     <i class="fas fa-exclamation-circle me-2"></i> Error saving changes. Please try again.
                 </div>
                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
@@ -56,31 +50,26 @@
         <div class="row gx-4">
             <!-- Left Column - Basic Information -->
             <div class="col-lg-5 mb-4">
-                <div class="card h-100 ultra-card">
+                <div class="card h-auto ultra-card">
                     <div class="card-header bg-primary-gradient py-3">
-                        <h5 class="card-title mb-0 text-white">
-                            <i class="fas fa-robot me-2"></i>Basic Information
+                        <h5 class="card-title mb-0 text-white d-flex align-items-center justify-content-between">
+                            <span class="chatbot-name-display" id="chatbotNameDisplay">
+                                <i class="fas fa-robot me-2"></i>{{ chatbot.name }}
+                            </span>
+                            <div class="chatbot-name-edit d-none">
+                                <input type="text" class="form-control form-control-sm transparent-input" id="chatbot_name" name="name" value="{{ chatbot.name }}" required>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-light edit-name-btn" id="editNameBtn">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
                         </h5>
                     </div>
                     <div class="card-body p-4">
                         <div class="mb-4">
-                            <label for="chatbot_name" class="form-label fw-bold">Name</label>
-                            <input type="text" class="form-control" id="chatbot_name" name="name" value="{{ chatbot.name }}" required>
-                            <div class="invalid-feedback">Please provide a name for your chatbot.</div>
-                        </div>
-                        
-                        <div class="mb-4">
                             <label for="chatbot_prompt" class="form-label fw-bold">System Prompt</label>
                             <div class="code-editor-container">
-                                <div class="code-editor-header d-flex justify-content-between align-items-center px-3 py-2">
-                                    <span class="editor-label">system.prompt</span>
-                                    <div class="editor-actions">
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="expandPrompt">
-                                            <i class="fas fa-expand-alt"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                                <textarea class="form-control code-editor" id="chatbot_prompt" name="prompt" rows="8">{{ chatbot.prompt }}</textarea>
+                    
+                                <textarea class="form-control code-editor" id="chatbot_prompt" name="prompt" rows="15">{{ chatbot.prompt }}</textarea>
                             </div>
                             <div class="form-text mt-2">
                                 <i class="fas fa-info-circle me-1"></i> The system prompt defines how your chatbot behaves and responds.
@@ -92,16 +81,16 @@
             
             <!-- Center Column - Configuration Settings -->
             <div class="col-lg-3 mb-4">
-                <div class="card h-100 ultra-card">
+                <div class="card h-auto pb-4 ultra-card">
                     <div class="card-header bg-secondary-gradient py-3">
                         <h5 class="card-title mb-0 text-white">
                             <i class="fas fa-cogs me-2"></i>Configuration
                         </h5>
                     </div>
-                    <div class="card-body p-4">
+                    <div class="card-body px-3 py-2">
                         <!-- Chatbot Description - Moved from left column -->
                         <div class="settings-group">
-                            <div class="settings-header d-flex justify-content-between align-items-center mb-3" data-bs-toggle="collapse" data-bs-target="#descriptionSettings" role="button" aria-expanded="false" aria-controls="descriptionSettings">
+                            <div class="settings-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#descriptionSettings" role="button" aria-expanded="false" aria-controls="descriptionSettings">
                                 <h6 class="settings-title fw-bold mb-0">
                                     <i class="fas fa-align-left me-2 text-primary"></i>Description
                                 </h6>
@@ -118,7 +107,7 @@
                     
                         <!-- Model Settings - Collapsible -->
                         <div class="settings-group">
-                            <div class="settings-header d-flex justify-content-between align-items-center mb-3" data-bs-toggle="collapse" data-bs-target="#modelSettings" role="button" aria-expanded="false" aria-controls="modelSettings">
+                            <div class="settings-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#modelSettings" role="button" aria-expanded="false" aria-controls="modelSettings">
                                 <h6 class="settings-title fw-bold mb-0">
                                     <i class="fas fa-microchip me-2 text-primary"></i>Model Settings
                                 </h6>
@@ -132,44 +121,25 @@
                                         <select class="form-select" id="llm_provider" name="llm_provider" required>
                                             <option value="" disabled>Select a provider</option>
                                             <option value="openai" {% if chatbot.llm_provider == 'openai' %}selected{% endif %}>OpenAI</option>
-                                            <option value="google" {% if chatbot.llm_provider == 'google' %}selected{% endif %}>Google AI</option>
-                                            <option value="deepseek" {% if chatbot.llm_provider == 'deepseek' %}selected{% endif %}>DeepSeek AI</option>
-                                            <option value="anthropic" {% if chatbot.llm_provider == 'anthropic' %}selected{% endif %}>Anthropic</option>
-                                            <option value="mistral" {% if chatbot.llm_provider == 'mistral' %}selected{% endif %}>Mistral AI</option>
+                                            <option value="google" {% if chatbot.llm_provider == 'google' %}selected{% endif %}>Google</option>
+                                            <option value="deepseek" {% if chatbot.llm_provider == 'deepseek' %}selected{% endif %}>DeepSeek</option>
                                         </select>
                                     </div>
                                     
                                     <div class="mb-3">
                                         <label for="llm_model" class="form-label">Model</label>
-                                        <select class="form-select" id="llm_model" name="llm_model" required data-current-model="{{ chatbot.llm_model }}">
+                                        <select class="form-select" id="llm_model" name="llm_model" required>
                                             <!-- Models populated dynamically based on provider -->
                                         </select>
                                     </div>
-                                    
-                                    <div class="mb-4">
-                                        <label for="temperature" class="form-label">Temperature</label>
-                                        <div class="temperature-control">
-                                            <div class="d-flex align-items-center mb-2">
-                                                <span class="text-muted small me-2">Precise</span>
-                                                <input type="range" class="form-range flex-grow-1" id="temperature_range" min="0" max="1" step="0.1" value="{{ chatbot.temperature|default:'0.7' }}">
-                                                <span class="text-muted small ms-2">Creative</span>
-                                            </div>
-                                            <input type="number" class="form-control" id="temperature" name="temperature" min="0" max="1" step="0.1" value="{{ chatbot.temperature|default:'0.7' }}">
-                                        </div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="max_tokens" class="form-label">Max Tokens</label>
-                                        <input type="number" class="form-control" id="max_tokens" name="max_tokens" min="1" max="4096" value="{{ chatbot.max_tokens|default:'2048' }}">
-                                        <div class="form-text">Maximum length of the model's response.</div>
-                                    </div>
+                   
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Visibility Settings - Collapsible -->
                         <div class="settings-group">
-                            <div class="settings-header d-flex justify-content-between align-items-center mb-3" data-bs-toggle="collapse" data-bs-target="#visibilitySettings" role="button" aria-expanded="false" aria-controls="visibilitySettings">
+                            <div class="settings-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#visibilitySettings" role="button" aria-expanded="false" aria-controls="visibilitySettings">
                                 <h6 class="settings-title fw-bold mb-0">
                                     <i class="fas fa-eye me-2 text-primary"></i>Visibility Settings
                                 </h6>
@@ -203,7 +173,7 @@
                         
                         <!-- Channels - Collapsible -->
                         <div class="settings-group">
-                            <div class="settings-header d-flex justify-content-between align-items-center mb-3" data-bs-toggle="collapse" data-bs-target="#channelsSettings" role="button" aria-expanded="false" aria-controls="channelsSettings">
+                            <div class="settings-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#channelsSettings" role="button" aria-expanded="false" aria-controls="channelsSettings">
                                 <h6 class="settings-title fw-bold mb-0">
                                     <i class="fas fa-plug me-2 text-primary"></i>Channels
                                 </h6>
@@ -213,81 +183,38 @@
                             <div class="collapse" id="channelsSettings">
                                 <div class="settings-content">
                                     <div class="channels-list">
+                                        {% for channel in channels %}
                                         <div class="channel-row d-flex justify-content-between align-items-center mb-2 p-2 rounded">
                                             <div class="d-flex align-items-center">
-                                                <div class="channel-icon web me-2">
+                                                <div class="channel-icon {{ channel.channel_type|lower|cut:' ' }} me-2">
                                                     <i class="fas fa-globe"></i>
                                                 </div>
-                                                <span>Web Chat</span>
+                                                <span>{{ channel.channel_type }}</span>
                                             </div>
-                                            <span class="badge bg-success">Active</span>
-                                        </div>
-                                        
-                                        <div class="channel-row d-flex justify-content-between align-items-center mb-2 p-2 rounded">
-                                            <div class="d-flex align-items-center">
-                                                <div class="channel-icon whatsapp me-2">
-                                                    <i class="fab fa-whatsapp"></i>
-                                                </div>
-                                                <span>WhatsApp</span>
+                                            <div>
+                                                <span class="badge bg-success me-2">Active</span>
+                                                <button type="button" class="btn btn-sm btn-outline-primary manage-channel-btn" 
+                                                data-channel-type="{{ channel.channel_type|lower|cut:' ' }}" 
+                                                data-channel-id="{{ channel.channel_id|default:forloop.counter0 }}"
+                                                data-channel-name="{{ channel.channel_type }}">
+                                                    Manage
+                                                </button>
                                             </div>
-                                            <span class="badge bg-success">Active</span>
                                         </div>
-                                        
-                                        <div class="channel-row d-flex justify-content-between align-items-center p-2 rounded">
-                                            <div class="d-flex align-items-center">
-                                                <div class="channel-icon email me-2">
-                                                    <i class="fas fa-envelope"></i>
-                                                </div>
-                                                <span>Email</span>
-                                            </div>
-                                            <span class="badge bg-success">Active</span>
-                                        </div>
+                                        {% endfor %}
+
                                     </div>
                                     
                                     <div class="mt-3 text-center">
-                                        <a href="#" class="btn btn-sm btn-outline-primary">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="addChannelBtn">
                                             <i class="fas fa-plus me-1"></i>Add Channel
-                                        </a>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
-                        <!-- Advanced Settings - Collapsible and initially collapsed -->
-                        <div class="settings-group">
-                            <div class="settings-header d-flex justify-content-between align-items-center mb-3" data-bs-toggle="collapse" data-bs-target="#advancedSettings" role="button" aria-expanded="false" aria-controls="advancedSettings">
-                                <h6 class="settings-title fw-bold mb-0">
-                                    <i class="fas fa-sliders-h me-2 text-primary"></i>Advanced Settings
-                                </h6>
-                                <i class="fas fa-chevron-right toggle-icon"></i>
-                            </div>
-                            
-                            <div class="collapse" id="advancedSettings">
-                                <div class="settings-content">
-                                    <div class="mb-3">
-                                        <label for="frequency_penalty" class="form-label">Frequency Penalty</label>
-                                        <input type="number" class="form-control" id="frequency_penalty" name="frequency_penalty" min="0" max="2" step="0.1" value="{{ chatbot.frequency_penalty|default:'0.0' }}">
-                                        <div class="form-text">Reduces repetition in generated text (0-2)</div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <label for="presence_penalty" class="form-label">Presence Penalty</label>
-                                        <input type="number" class="form-control" id="presence_penalty" name="presence_penalty" min="0" max="2" step="0.1" value="{{ chatbot.presence_penalty|default:'0.0' }}">
-                                        <div class="form-text">Encourages discussing new topics (0-2)</div>
-                                    </div>
-                                    
-                                    <div class="mb-3">
-                                        <div class="d-flex justify-content-between">
-                                            <label class="form-label fw-semibold mb-0">Stream Responses</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="is_streaming" name="is_streaming" {% if chatbot.is_streaming %}checked{% endif %}>
-                                            </div>
-                                        </div>
-                                        <div class="form-text">Enable typing-like response generation</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+              
                     </div>
                 </div>
             </div>
@@ -295,7 +222,7 @@
             <!-- Right Column: Test Chatbox -->
             <div class="col-lg-4">
                 <div class="fixed-chatbox-container">
-                    <div class="card ultra-card h-100">
+                    <div class="card ultra-card h-auto">
                         <div class="card-header bg-info-gradient text-white py-3">
                             <h5 class="card-title mb-0">Test Your Chatbot</h5>
                         </div>
@@ -312,7 +239,7 @@
                                     <div class="input-group">
                                         <input type="text" class="form-control" id="chatInput" placeholder="Type your message here...">
                                         <button class="btn btn-primary" id="sendMessage">
-                                            <i class="bi bi-send"></i>
+                                            <i class="fa fa-paper-plane"></i>
                                         </button>
                                     </div>
                                 </div>
@@ -352,6 +279,12 @@
     </div>
 </div>
 
+<!-- Test Toast Button (hidden by default, can be shown by setting style.display='block' in console) -->
+<button id="testToastBtn" style="position: fixed; bottom: 10px; left: 10px; z-index: 9999; display: none;" 
+        class="btn btn-sm btn-secondary">
+    Test Toast
+</button>
+
 <!-- Prompt Editor Full Screen Modal -->
 <div class="modal fade" id="promptEditorModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
@@ -370,8 +303,1376 @@
         </div>
     </div>
 </div>
+
+<!-- Channel Management Modal -->
+<div class="modal fade" id="channelManagementModal" tabindex="-1" aria-labelledby="channelManagementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="channelManagementModalLabel">
+                    <i class="fas fa-cog me-2"></i>Manage <span id="channelTypeText"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="channelSettingsForm">
+                    <!-- Channel base info -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <label class="form-label fw-semibold">Channel Status</label>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="channelActive" name="is_active" checked>
+                            </div>
+                        </div>
+                        <div class="form-text">Enable or disable this channel</div>
+                    </div>
+                    
+                    <!-- Email specific settings -->
+                    <div class="channel-specific-settings" id="emailSettings">
+                        <h6 class="mt-4 mb-3 border-bottom pb-2">Email Channel Settings</h6>
+                        
+                        <div class="mb-3">
+                            <label for="emailAddress" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="emailAddress" name="email_address" placeholder="support@example.com">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="emailProvider" class="form-label">Provider</label>
+                            <select class="form-select" id="emailProvider" name="provider">
+                                <option value="gmail">Gmail</option>
+                                <option value="outlook">Outlook</option>
+                                <option value="imap">IMAP</option>
+                                <option value="smtp">SMTP Custom</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="emailAccessToken" class="form-label">Access Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="emailAccessToken" name="access_token">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleEmailKey">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="emailRefreshToken" class="form-label">Refresh Token</label>
+                            <input type="password" class="form-control" id="emailRefreshToken" name="refresh_token">
+                        </div>
+                        
+                        <div class="row server-settings">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="smtpServer" class="form-label">SMTP Server</label>
+                                    <input type="text" class="form-control" id="smtpServer" name="smtp_server" placeholder="smtp.gmail.com">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="smtpPort" class="form-label">SMTP Port</label>
+                                    <input type="number" class="form-control" id="smtpPort" name="smtp_port" placeholder="587">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="imapServer" class="form-label">IMAP Server</label>
+                                    <input type="text" class="form-control" id="imapServer" name="imap_server" placeholder="imap.gmail.com">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="imapPort" class="form-label">IMAP Port</label>
+                                    <input type="number" class="form-control" id="imapPort" name="imap_port" placeholder="993">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- WhatsApp specific settings -->
+                    <div class="channel-specific-settings" id="whatsappSettings">
+                        <h6 class="mt-4 mb-3 border-bottom pb-2">WhatsApp Channel Settings</h6>
+                        
+                        <div class="mb-3">
+                            <label for="twilioAccountSid" class="form-label">Twilio Account SID</label>
+                            <input type="text" class="form-control" id="twilioAccountSid" name="twilio_account_sid">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="twilioAuthToken" class="form-label">Twilio Auth Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="twilioAuthToken" name="twilio_auth_token">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleWhatsappKey">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="twilioPhoneNumber" class="form-label">Twilio Phone Number</label>
+                            <input type="text" class="form-control" id="twilioPhoneNumber" name="twilio_phone_number" placeholder="+1234567890">
+                            <div class="form-text">Include country code (e.g., +1 for US)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- SMS specific settings -->
+                    <div class="channel-specific-settings" id="smsSettings">
+                        <h6 class="mt-4 mb-3 border-bottom pb-2">SMS Channel Settings</h6>
+                        
+                        <div class="mb-3">
+                            <label for="smsTwilioAccountSid" class="form-label">Twilio Account SID</label>
+                            <input type="text" class="form-control" id="smsTwilioAccountSid" name="twilio_account_sid">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="smsTwilioAuthToken" class="form-label">Twilio Auth Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="smsTwilioAuthToken" name="twilio_auth_token">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleSmsKey">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="smsTwilioPhoneNumber" class="form-label">Twilio Phone Number</label>
+                            <input type="text" class="form-control" id="smsTwilioPhoneNumber" name="twilio_phone_number" placeholder="+1234567890">
+                            <div class="form-text">Include country code (e.g., +1 for US)</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Messenger specific settings -->
+                    <div class="channel-specific-settings" id="messengerSettings">
+                        <h6 class="mt-4 mb-3 border-bottom pb-2">Messenger Channel Settings</h6>
+                        
+                        <div class="mb-3">
+                            <label for="pageId" class="form-label">Facebook Page ID</label>
+                            <input type="text" class="form-control" id="pageId" name="page_id">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="pageName" class="form-label">Page Name</label>
+                            <input type="text" class="form-control" id="pageName" name="page_name">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="accessToken" class="form-label">Access Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="accessToken" name="access_token">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleMessengerKey">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Web Chat specific settings -->
+                    <div class="channel-specific-settings" id="webSettings">
+                        <h6 class="mt-4 mb-3 border-bottom pb-2">Web Chat Settings</h6>
+                        
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger me-2" id="removeChannelBtn">
+                    <i class="fas fa-trash-alt me-1"></i>Delete Channel
+                </button>
+                <button type="button" class="btn btn-primary" id="saveChannelBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add New Channel Modal -->
+<div class="modal fade" id="addChannelModal" tabindex="-1" aria-labelledby="addChannelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addChannelModalLabel">
+                    <i class="fas fa-plus me-2"></i>Add New Channel
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="channel-selection">
+                    <h6 class="mb-3">Select a channel to add:</h6>
+                    <div class="row g-3" id="availableChannelsContainer">
+                        <!-- Available channels will be added here dynamically -->
+                    </div>
+                </div>
+                
+                <!-- Channel Configuration (shown after selection) -->
+                <div class="channel-configuration d-none" id="channelConfigSection">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0">Configure <span id="selectedChannelName"></span></h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary back-to-selection">
+                            <i class="fas fa-arrow-left me-1"></i>Back
+                        </button>
+                    </div>
+                    
+                    <form id="newChannelForm">
+                        <!-- Dynamic form fields will be inserted here based on channel type -->
+                    </form>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary d-none" id="addNewChannelBtn">Add Channel</button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
+<script>
+    // Initialize data from backend
+    window.chatbotData = {
+        chatbot_id: "{{ chatbot.chatbot_id|escapejs }}",
+        name: "{{ chatbot.name|escapejs }}",
+        description: "{{ chatbot.description|escapejs }}",
+        prompt: "{{ chatbot.prompt|escapejs }}",
+        llm_provider: "{{ chatbot.llm_provider|escapejs }}",
+        llm_model: "{{ chatbot.llm_model|escapejs }}",
+        is_active: {{ chatbot.is_active|yesno:"true,false" }},
+        is_public: {{ chatbot.is_public|yesno:"true,false" }}
+    };
+    
+    window.channelsData = [];
+    {% for channel in channels %}
+    window.channelsData.push({
+        channel_id: "{{ channel.channel_id|default:forloop.counter0|escapejs }}",
+        channel_type: "{{ channel.channel_type|escapejs }}",
+        {% if channel.channel_type == 'Email' %}
+        email_address: "{{ channel.email_address|default:''|escapejs }}",
+        provider: "{{ channel.provider|default:''|escapejs }}",
+        access_token: "{{ channel.access_token|default:''|escapejs }}",
+        refresh_token: "{{ channel.refresh_token|default:''|escapejs }}",
+        smtp_server: "{{ channel.smtp_server|default:''|escapejs }}",
+        smtp_port: "{{ channel.smtp_port|default:''|escapejs }}",
+        imap_server: "{{ channel.imap_server|default:''|escapejs }}",
+        imap_port: "{{ channel.imap_port|default:''|escapejs }}"
+        {% elif channel.channel_type == 'WhatsApp' or channel.channel_type == 'SMS' %}
+        twilio_account_sid: "{{ channel.twilio_account_sid|default:''|escapejs }}",
+        twilio_auth_token: "{{ channel.twilio_auth_token|default:''|escapejs }}",
+        twilio_phone_number: "{{ channel.twilio_phone_number|default:''|escapejs }}"
+        {% elif channel.channel_type == 'Messenger' %}
+        page_id: "{{ channel.page_id|default:''|escapejs }}",
+        page_name: "{{ channel.page_name|default:''|escapejs }}",
+        access_token: "{{ channel.access_token|default:''|escapejs }}"
+        {% endif %}
+    });
+    {% endfor %}
+    
+    // Log channels data for debugging
+    console.log("Channels data loaded:", window.channelsData);
+</script>
 <script src="{% static 'js/chatbot_detail.js' %}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all toasts - multiple approaches for compatibility
+        const successToastEl = document.getElementById('successToast');
+        const errorToastEl = document.getElementById('errorToast');
+        
+        // Initialize using Bootstrap directly
+        let successToast, errorToast;
+        
+        try {
+            // Try Bootstrap 5 method
+            successToast = new bootstrap.Toast(successToastEl, { 
+                autohide: true, 
+                delay: 5000, // Longer delay
+                animation: true 
+            });
+            errorToast = new bootstrap.Toast(errorToastEl, { 
+                autohide: true, 
+                delay: 7000, // Longer delay
+                animation: true 
+            });
+            console.log('Toasts initialized with Bootstrap 5 method');
+        } catch (e) {
+            console.error('Could not initialize toasts with Bootstrap:', e);
+            
+            // Fallback: Create manual implementation
+            successToast = {
+                show: function() {
+                    successToastEl.classList.add('show');
+                    setTimeout(() => {
+                        successToastEl.classList.remove('show');
+                    }, 5000);
+                }
+            };
+            
+            errorToast = {
+                show: function() {
+                    errorToastEl.classList.add('show');
+                    setTimeout(() => {
+                        errorToastEl.classList.remove('show');
+                    }, 7000);
+                }
+            };
+            console.log('Toasts initialized with fallback method');
+        }
+        
+        // Make toasts globally accessible
+        window.successToast = successToast;
+        window.errorToast = errorToast;
+        
+        // Test toasts on load (remove this in production)
+        // setTimeout(() => {
+        //    document.getElementById('successToastMessage').innerHTML = '<i class="fas fa-check-circle me-2"></i>Toast test successful!';
+        //    successToast.show();
+        // }, 1000);
+        
+        // Debug helper for toast testing
+        window.showToast = function(type, message) {
+            if (type === 'success') {
+                document.getElementById('successToastMessage').innerHTML = 
+                    `<i class="fas fa-check-circle me-2"></i>${message}`;
+                successToast.show();
+                console.log('Success toast shown:', message);
+            } else {
+                document.getElementById('errorToastMessage').innerHTML = 
+                    `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
+                errorToast.show();
+                console.log('Error toast shown:', message);
+            }
+        };
+        
+        // Test toast button
+        const testToastBtn = document.getElementById('testToastBtn');
+        if (testToastBtn) {
+            testToastBtn.addEventListener('click', function() {
+                window.showToast('success', 'Test toast message');
+                console.log('Test toast button clicked');
+            });
+            
+            // Expose method to show the test button in console
+            window.showTestButton = function() {
+                testToastBtn.style.display = 'block';
+                return 'Test button is now visible. Click it to test the toast functionality.';
+            };
+            
+            console.log('You can show the test toast button by running window.showTestButton() in the console');
+        }
+        
+        // Name editing (previously added code)
+        const nameDisplay = document.getElementById('chatbotNameDisplay');
+        const nameInput = document.getElementById('chatbot_name');
+        const editNameBtn = document.getElementById('editNameBtn');
+        const nameEditContainer = document.querySelector('.chatbot-name-edit');
+        
+        // Add CSS for styling
+        const style = document.createElement('style');
+        style.textContent = `
+            .transparent-input {
+                background-color: transparent !important;
+                border: none !important;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.5) !important;
+                color: white !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                height: auto !important;
+                outline: none !important;
+                width: auto !important;
+            }
+            .transparent-input:focus {
+                box-shadow: none !important;
+                outline: none !important;
+            }
+            .btn-light {
+                color: white;
+                background-color: rgba(255, 255, 255, 0.2);
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+            .btn-light:hover {
+                background-color: rgba(255, 255, 255, 0.3);
+            }
+            .channel-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: white;
+            }
+            .channel-option .channel-icon {
+                width: 60px;
+                height: 60px;
+            }
+            .web { background-color: #1976d2; }
+            .whatsapp { background-color: #25D366; }
+            .email { background-color: #DB4437; }
+            .telegram { background-color: #0088cc; }
+            .messenger { background-color: #0084ff; }
+            .slack { background-color: #4A154B; }
+            .discord { background-color: #5865F2; }
+            .sms { background-color: #6739B7; }
+            .channel-option {
+                cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .channel-option:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            }
+            
+            /* Custom toast styling */
+            .toast {
+                z-index: 9999 !important;
+                min-width: 300px;
+                opacity: 1 !important;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            }
+            .toast.show {
+                display: block !important;
+                opacity: 1 !important;
+                visibility: visible !important;
+            }
+            .toast.bg-success {
+                background-color: #28a745 !important;
+            }
+            .toast.bg-danger {
+                background-color: #dc3545 !important;
+            }
+            .toast-body {
+                font-size: 16px !important;
+                font-weight: 500 !important;
+                padding: 12px 15px !important;
+            }
+            .is-invalid {
+                border-color: #dc3545 !important;
+                background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e") !important;
+                background-repeat: no-repeat !important;
+                background-position: right calc(0.375em + 0.1875rem) center !important;
+                background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem) !important;
+            }
+            .invalid-feedback {
+                display: block !important;
+                color: #dc3545 !important;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Handle name editing
+        editNameBtn.addEventListener('click', function() {
+            if (nameEditContainer.classList.contains('d-none')) {
+                // Switch to edit mode
+                nameDisplay.classList.add('d-none');
+                nameEditContainer.classList.remove('d-none');
+                nameInput.focus();
+                nameInput.select();
+                editNameBtn.innerHTML = '<i class="fas fa-check"></i>';
+            } else {
+                // Save changes and switch back to display mode
+                nameDisplay.classList.remove('d-none');
+                nameEditContainer.classList.add('d-none');
+                nameDisplay.innerHTML = '<i class="fas fa-robot me-2"></i>' + nameInput.value;
+                editNameBtn.innerHTML = '<i class="fas fa-pencil-alt"></i>';
+            }
+        });
+        
+        // Save name on Enter press
+        nameInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                editNameBtn.click();
+            }
+        });
+        
+        // Channel management
+        const channelManagementModal = new bootstrap.Modal(document.getElementById('channelManagementModal'));
+        const addChannelModal = new bootstrap.Modal(document.getElementById('addChannelModal'));
+        
+        // All available channels from models.py CHANNEL_TYPE_CHOICES
+        const allChannels = [
+            { type: 'whatsapp', name: 'WhatsApp', icon: 'fa-whatsapp' },
+            { type: 'messenger', name: 'Messenger', icon: 'fa-facebook-messenger' },
+            { type: 'sms', name: 'SMS', icon: 'fa-sms' },
+            { type: 'email', name: 'Email', icon: 'fa-envelope' },
+            { type: 'web', name: 'Web Chat', icon: 'fa-globe' }
+        ];
+        
+        // Get currently active channels from window.channelsData
+        const activeChannels = window.channelsData ? window.channelsData.map(channel => 
+            channel.channel_type.toLowerCase().replace(/\s+/g, '')) : ['web'];
+        
+        // Handle manage channel button clicks
+        document.querySelectorAll('.manage-channel-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const channelType = this.getAttribute('data-channel-type');
+                const channelName = this.getAttribute('data-channel-name');
+                const channelId = this.getAttribute('data-channel-id');
+                
+                console.log("Opening channel management for:", channelName, "ID:", channelId);
+                
+                // Store the channel ID in the modal for later use
+                document.getElementById('channelManagementModal').setAttribute('data-current-channel-id', channelId);
+                
+                // Update modal title
+                document.getElementById('channelTypeText').textContent = channelName;
+                
+                // Hide all channel-specific settings
+                document.querySelectorAll('.channel-specific-settings').forEach(el => {
+                    el.classList.add('d-none');
+                });
+                
+                // Show only the relevant settings
+                const settingsEl = document.getElementById(channelType.toLowerCase().replace(/\s+/g, '') + 'Settings');
+                if (settingsEl) {
+                    settingsEl.classList.remove('d-none');
+                }
+                
+                // Find channel data
+                const channelData = window.channelsData ? window.channelsData.find(c => 
+                    c.channel_id === channelId || 
+                    c.channel_type.toLowerCase().replace(/\s+/g, '') === channelType.toLowerCase().replace(/\s+/g, '')) : null;
+                
+                if (channelData) {
+                    // Populate form with channel data
+                    const channelTypeLower = channelType.toLowerCase().replace(/\s+/g, '');
+                    
+                    switch(channelTypeLower) {
+                        case 'email':
+                            document.getElementById('emailAddress').value = channelData.email_address || '';
+                            document.getElementById('emailProvider').value = channelData.provider || '';
+                            document.getElementById('emailAccessToken').value = channelData.access_token || '';
+                            document.getElementById('emailRefreshToken').value = channelData.refresh_token || '';
+                            document.getElementById('smtpServer').value = channelData.smtp_server || '';
+                            document.getElementById('smtpPort').value = channelData.smtp_port || '';
+                            document.getElementById('imapServer').value = channelData.imap_server || '';
+                            document.getElementById('imapPort').value = channelData.imap_port || '';
+                            
+                            // Show/hide server settings based on provider
+                            const serverSettings = document.querySelector('.server-settings');
+                            if (serverSettings) {
+                                if (channelData.provider === 'imap' || channelData.provider === 'smtp') {
+                                    serverSettings.classList.remove('d-none');
+                                } else {
+                                    serverSettings.classList.add('d-none');
+                                }
+                            }
+                            break;
+                            
+                        case 'whatsapp':
+                            document.getElementById('twilioAccountSid').value = channelData.twilio_account_sid || '';
+                            document.getElementById('twilioAuthToken').value = channelData.twilio_auth_token || '';
+                            document.getElementById('twilioPhoneNumber').value = channelData.twilio_phone_number || '';
+                            break;
+                            
+                        case 'sms':
+                            document.getElementById('smsTwilioAccountSid').value = channelData.twilio_account_sid || '';
+                            document.getElementById('smsTwilioAuthToken').value = channelData.twilio_auth_token || '';
+                            document.getElementById('smsTwilioPhoneNumber').value = channelData.twilio_phone_number || '';
+                            break;
+                            
+                        case 'messenger':
+                            document.getElementById('pageId').value = channelData.page_id || '';
+                            document.getElementById('pageName').value = channelData.page_name || '';
+                            document.getElementById('accessToken').value = channelData.access_token || '';
+                            break;
+                    }
+                }
+                
+                // Show modal
+                channelManagementModal.show();
+            });
+        });
+        
+        // Handle email provider change
+        document.getElementById('emailProvider')?.addEventListener('change', function() {
+            const serverSettings = document.querySelector('.server-settings');
+            if (serverSettings) {
+                if (this.value === 'imap' || this.value === 'smtp') {
+                    serverSettings.classList.remove('d-none');
+                } else {
+                    serverSettings.classList.add('d-none');
+                }
+            }
+        });
+        
+        // Toggle visibility of password fields
+        document.querySelectorAll('#toggleEmailKey, #toggleWhatsappKey, #toggleMessengerKey, #toggleSmsKey').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const input = this.previousElementSibling;
+                const icon = this.querySelector('i');
+                
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    input.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+        });
+        
+        // Handle add channel button click
+        document.getElementById('addChannelBtn').addEventListener('click', function() {
+            // Show available channels
+            const availableChannels = allChannels.filter(channel => 
+                !activeChannels.includes(channel.type.toLowerCase()));
+            
+            // Clear previous content
+            document.getElementById('availableChannelsContainer').innerHTML = '';
+            
+            // Add available channels to the modal
+            availableChannels.forEach(channel => {
+                const channelCard = document.createElement('div');
+                channelCard.className = 'col-md-6 mb-3';
+                channelCard.innerHTML = `
+                    <div class="card h-100 channel-option" data-channel-type="${channel.type}">
+                        <div class="card-body text-center py-4">
+                            <div class="channel-icon ${channel.type} mb-3 mx-auto">
+                                <i class="fas ${channel.icon} fa-2x"></i>
+                            </div>
+                            <h6 class="card-title">${channel.name}</h6>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('availableChannelsContainer').appendChild(channelCard);
+                
+                // Add click handler
+                channelCard.querySelector('.card-body').addEventListener('click', function() {
+                    const selectedType = this.closest('.channel-option').getAttribute('data-channel-type');
+                    showChannelConfiguration(selectedType);
+                });
+            });
+            
+            // Show the selection view, hide configuration
+            document.querySelector('.channel-selection').classList.remove('d-none');
+            document.getElementById('channelConfigSection').classList.add('d-none');
+            document.getElementById('addNewChannelBtn').classList.add('d-none');
+            
+            // Show modal
+            addChannelModal.show();
+        });
+        
+        // Back to channel selection button
+        document.querySelector('.back-to-selection').addEventListener('click', function() {
+            document.querySelector('.channel-selection').classList.remove('d-none');
+            document.getElementById('channelConfigSection').classList.add('d-none');
+            document.getElementById('addNewChannelBtn').classList.add('d-none');
+        });
+        
+        // Add new channel button
+        document.getElementById('addNewChannelBtn').addEventListener('click', function(event) {
+            // Prevent multiple submission
+            event.preventDefault();
+            
+            // If button is already disabled or processing, ignore click
+            if (this.disabled || this.getAttribute('data-processing') === 'true') {
+                console.log('Button already processing, ignoring click');
+                return;
+            }
+            
+            // Set processing flag
+            this.setAttribute('data-processing', 'true');
+            
+            const form = document.getElementById('newChannelForm');
+            const formData = new FormData(form);
+            
+            // Get channel type
+            const channelType = formData.get('channel_type');
+            const channelName = allChannels.find(c => c.type === channelType)?.name || channelType;
+            
+            // Show validation messages inline, don't submit if validation fails
+            if (channelType === 'email') {
+                if (!formData.get('email_address')) {
+                    this.setAttribute('data-processing', 'false');
+                    showFieldError('newEmailAddress', 'Email address is required');
+                    return;
+                }
+                if (!formData.get('provider')) {
+                    this.setAttribute('data-processing', 'false');
+                    showFieldError('newEmailProvider', 'Provider is required');
+                    return;
+                }
+            } else if (channelType === 'whatsapp' || channelType === 'sms') {
+                if (!formData.get('twilio_account_sid')) {
+                    this.setAttribute('data-processing', 'false');
+                    showFieldError('newTwilioAccountSid', 'Twilio Account SID is required');
+                    return;
+                }
+                if (!formData.get('twilio_phone_number')) {
+                    this.setAttribute('data-processing', 'false');
+                    showFieldError('newTwilioPhoneNumber', 'Twilio Phone Number is required');
+                    return;
+                }
+            } else if (channelType === 'messenger') {
+                if (!formData.get('page_id')) {
+                    this.setAttribute('data-processing', 'false'); 
+                    showFieldError('newPageId', 'Page ID is required');
+                    return;
+                }
+                if (!formData.get('access_token')) {
+                    this.setAttribute('data-processing', 'false');
+                    showFieldError('newAccessToken', 'Access Token is required');
+                    return;
+                }
+            }
+            
+            // Convert FormData to JSON
+            const channelData = {};
+            formData.forEach((value, key) => {
+                channelData[key] = value;
+            });
+            
+            // Show loading state
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Adding...';
+            this.disabled = true;
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Get chatbot ID
+            const chatbotId = window.chatbotData.chatbot_id;
+            
+            // Add timestamp to prevent browser caching issues
+            const timestamp = new Date().getTime();
+            
+            // Send API request
+            fetch(`/chat/add-channel/${chatbotId}/?t=${timestamp}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                    'Cache-Control': 'no-cache, no-store, must-revalidate'
+                },
+                body: JSON.stringify(channelData)
+            })
+            .then(response => {
+                // Check if the response is valid JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => {
+                        // Add status to data for handling
+                        data.status = response.status;
+                        return data;
+                    });
+                } else {
+                    // If response is not JSON, throw an error to be caught by catch block
+                    throw new Error('Invalid response format from server');
+                }
+            })
+            .then(data => {
+                // Reset button state
+                this.innerHTML = 'Add Channel';
+                this.disabled = false;
+                this.setAttribute('data-processing', 'false');
+                
+                if (data.success) {
+                    const successToastMsg = `${channelName} channel added successfully!`;
+                    document.getElementById('successToastMessage').innerHTML = 
+                        `<i class="fas fa-check-circle me-2"></i>${successToastMsg}`;
+                    
+                    // Show success toast using the pre-initialized toast
+                    successToast.show();
+                    
+                    // Close modal
+                    try {
+                        addChannelModal.hide();
+                    } catch(e) {
+                        console.error('Error hiding modal:', e);
+                        // Fallback method
+                        const modalEl = document.getElementById('addChannelModal');
+                        if (modalEl) {
+                            modalEl.classList.remove('show');
+                            document.body.classList.remove('modal-open');
+                            const backdrops = document.getElementsByClassName('modal-backdrop');
+                            while (backdrops.length > 0) {
+                                backdrops[0].parentNode.removeChild(backdrops[0]);
+                            }
+                        }
+                    }
+                    
+                    // Refresh the page to show the new channel
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000); // Longer delay so the user definitely sees the success message
+                } else {
+                    // Show error toast
+                    const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+                    const errorToastBody = document.querySelector('#errorToastMessage');
+                    errorToastBody.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${data.error || `Error adding channel. Please try again.`}`;
+                    errorToast.show();
+                }
+            })
+            .catch(error => {
+                console.error('Error adding channel:', error);
+                // Reset button state
+                this.innerHTML = 'Add Channel';
+                this.disabled = false;
+                this.setAttribute('data-processing', 'false');
+                
+                // Show error toast
+                const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+                const errorToastBody = document.querySelector('#errorToastMessage');
+                errorToastBody.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Network error. Please try again.`;
+                errorToast.show();
+            });
+        });
+        
+        // Helper function to show field validation errors
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.classList.add('is-invalid');
+                
+                // Create or update error message
+                let errorDiv = field.nextElementSibling;
+                if (!errorDiv || !errorDiv.classList.contains('invalid-feedback')) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.className = 'invalid-feedback';
+                    field.parentNode.insertBefore(errorDiv, field.nextSibling);
+                }
+                errorDiv.textContent = message;
+                
+                // Focus the field
+                field.focus();
+                
+                // Clear error after user starts typing
+                field.addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
+                }, { once: true });
+            }
+        }
+        
+        // Save channel changes button
+        document.getElementById('saveChannelBtn').addEventListener('click', function() {
+            // Get the current channel being managed
+            const channelTypeText = document.getElementById('channelTypeText').textContent;
+            const channelTypeNormalized = channelTypeText.toLowerCase().replace(/\s+/g, '');
+            
+            // Get the channel ID from the modal data attribute
+            const channelId = document.getElementById('channelManagementModal').getAttribute('data-current-channel-id');
+            
+            // Debug output - show what we're working with
+            console.log('Channel Type:', channelTypeText);
+            console.log('Channel ID from modal:', channelId);
+            
+            if (!channelId) {
+                // Fallback - try to find the channel in the channelsData array
+                const channelData = window.channelsData.find(c => 
+                    c.channel_type.toLowerCase().replace(/\s+/g, '') === channelTypeNormalized);
+                
+                if (channelData && channelData.channel_id) {
+                    console.log('Found channel ID in channelsData:', channelData.channel_id);
+                    const confirmed = confirm(`Channel ID was retrieved from channelsData: ${channelData.channel_id}\nProceed with this ID?`);
+                    if (confirmed) {
+                        document.getElementById('channelManagementModal').setAttribute('data-current-channel-id', channelData.channel_id);
+                        saveChannelChanges(channelData.channel_id, channelTypeText);
+                        return;
+                    }
+                }
+                
+                console.error('Channel ID not found in modal attribute');
+                alert('Channel ID not found. Please try again.');
+                return;
+            }
+            
+            saveChannelChanges(channelId, channelTypeText);
+        });
+        
+        // Function to save channel changes
+        function saveChannelChanges(channelId, channelType) {
+            // Build data object based on channel type
+            const channelData = {
+                channel_type: channelType
+            };
+            
+            // Get form data based on channel type
+            const channelLower = channelType.toLowerCase();
+            if (channelLower.includes('email')) {
+                channelData.email_address = document.getElementById('emailAddress').value;
+                channelData.provider = document.getElementById('emailProvider').value;
+                channelData.access_token = document.getElementById('emailAccessToken').value;
+                channelData.refresh_token = document.getElementById('emailRefreshToken').value;
+                
+                if (channelData.provider === 'imap' || channelData.provider === 'smtp') {
+                    channelData.smtp_server = document.getElementById('smtpServer').value;
+                    channelData.smtp_port = document.getElementById('smtpPort').value;
+                    channelData.imap_server = document.getElementById('imapServer').value;
+                    channelData.imap_port = document.getElementById('imapPort').value;
+                }
+            } else if (channelLower.includes('whatsapp')) {
+                channelData.twilio_account_sid = document.getElementById('twilioAccountSid').value;
+                channelData.twilio_auth_token = document.getElementById('twilioAuthToken').value;
+                channelData.twilio_phone_number = document.getElementById('twilioPhoneNumber').value;
+            } else if (channelLower.includes('sms')) {
+                channelData.twilio_account_sid = document.getElementById('smsTwilioAccountSid').value;
+                channelData.twilio_auth_token = document.getElementById('smsTwilioAuthToken').value;
+                channelData.twilio_phone_number = document.getElementById('smsTwilioPhoneNumber').value;
+            } else if (channelLower.includes('messenger')) {
+                channelData.page_id = document.getElementById('pageId').value;
+                channelData.page_name = document.getElementById('pageName').value;
+                channelData.access_token = document.getElementById('accessToken').value;
+            }
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Show loading state
+            const saveBtn = document.getElementById('saveChannelBtn');
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            saveBtn.disabled = true;
+            
+            console.log('Sending channel update for ID:', channelId);
+            console.log('Channel data:', channelData);
+            
+            // Save changes via API
+            fetch(`/chat/update-channel/${channelId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(channelData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Reset button state
+                saveBtn.innerHTML = 'Save Changes';
+                saveBtn.disabled = false;
+                
+                if (data.success) {
+                    // Log success for debugging
+                    console.log('Channel updated successfully:', channelType);
+                    
+                    // Set success message
+                    document.getElementById('successToastMessage').innerHTML = 
+                        `<i class="fas fa-check-circle me-2"></i>${channelType} channel updated successfully!`;
+                    
+                    // Show success toast using the pre-initialized toast
+                    successToast.show();
+                    
+                    // Close modal
+                    channelManagementModal.hide();
+                    
+                    // Refresh the page to show updated data
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000); // Longer delay so the user definitely sees the success message
+                } else {
+                    // Show error toast
+                    const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+                    const errorToastBody = document.querySelector('#errorToastMessage');
+                    errorToastBody.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>` + 
+                        (data.error || `Error updating ${channelType} channel. Please try again.`);
+                    errorToast.show();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating channel:', error);
+                // Reset button state
+                saveBtn.innerHTML = 'Save Changes';
+                saveBtn.disabled = false;
+                
+                // Show error toast
+                const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+                const errorToastBody = document.querySelector('#errorToastMessage');
+                errorToastBody.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Network error. Please try again.`;
+                errorToast.show();
+            });
+        }
+        
+        // Remove channel button
+        document.getElementById('removeChannelBtn').addEventListener('click', function() {
+            // Get the channel ID from the modal
+            const channelId = document.getElementById('channelManagementModal').getAttribute('data-current-channel-id');
+            const channelTypeText = document.getElementById('channelTypeText').textContent;
+            
+            if (!channelId) {
+                alert('Channel ID not found. Please try again.');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to delete this ${channelTypeText} channel? All configuration will be lost.`)) {
+                // Show loading state
+                this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Deleting...';
+                this.disabled = true;
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                
+                // Send delete request
+                fetch(`/chat/delete-channel/${channelId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Reset button state
+                    this.innerHTML = 'Remove Channel';
+                    this.disabled = false;
+                    
+                    if (data.success) {
+                        // Log success for debugging
+                        console.log('Channel deleted successfully:', channelTypeText);
+                        
+                        // Set success message
+                        document.getElementById('successToastMessage').innerHTML = 
+                            `<i class="fas fa-check-circle me-2"></i>${channelTypeText} channel deleted successfully!`;
+                        
+                        // Show success toast
+                        successToast.show();
+                        
+                        // Close modal
+                        channelManagementModal.hide();
+                        
+                        // Refresh the page to update the UI
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000); // Delay so the user sees the success message
+                    } else {
+                        // Show error toast
+                        document.getElementById('errorToastMessage').innerHTML = 
+                            `<i class="fas fa-exclamation-circle me-2"></i>${data.error || 'Error deleting channel. Please try again.'}`;
+                        errorToast.show();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error deleting channel:', error);
+                    
+                    // Reset button state
+                    this.innerHTML = 'Remove Channel';
+                    this.disabled = false;
+                    
+                    // Show error toast
+                    document.getElementById('errorToastMessage').innerHTML = 
+                        `<i class="fas fa-exclamation-circle me-2"></i>Network error. Please try again.`;
+                    errorToast.show();
+                });
+            }
+        });
+        
+        // Function to show channel configuration in New Channel modal
+        function showChannelConfiguration(channelType) {
+            // Find channel details
+            const channelInfo = allChannels.find(c => c.type === channelType);
+            
+            // Update selected channel name
+            document.getElementById('selectedChannelName').textContent = channelInfo.name;
+            
+            // Hide channel selection, show configuration
+            document.querySelector('.channel-selection').classList.add('d-none');
+            document.getElementById('channelConfigSection').classList.remove('d-none');
+            document.getElementById('addNewChannelBtn').classList.remove('d-none');
+            
+            // Generate form based on channel type
+            const formContainer = document.getElementById('newChannelForm');
+            formContainer.innerHTML = '';
+            
+            // Common fields for all channels
+            const commonFields = `
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label class="form-label fw-semibold">Channel Status</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="newChannelActive" name="is_active" checked>
+                        </div>
+                    </div>
+                    <div class="form-text">Enable or disable this channel</div>
+                </div>
+                
+                <input type="hidden" name="channel_type" value="${channelType}">
+            `;
+            
+            formContainer.innerHTML += commonFields;
+            
+            // Channel-specific fields
+            let specificFields = '';
+            
+            switch(channelType) {
+                case 'email':
+                    specificFields = `
+                        <div class="mb-3">
+                            <label for="newEmailAddress" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="newEmailAddress" name="email_address" placeholder="support@example.com" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newEmailProvider" class="form-label">Provider</label>
+                            <select class="form-select" id="newEmailProvider" name="provider" required>
+                                <option value="gmail">Gmail</option>
+                                <option value="outlook">Outlook</option>
+                                <option value="imap">IMAP</option>
+                                <option value="smtp">SMTP Custom</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newEmailAccessToken" class="form-label">Access Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="newEmailAccessToken" name="access_token" required>
+                                <button class="btn btn-outline-secondary toggle-visibility" type="button">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="customServerSettings" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newSmtpServer" class="form-label">SMTP Server</label>
+                                        <input type="text" class="form-control" id="newSmtpServer" name="smtp_server" placeholder="smtp.gmail.com">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newSmtpPort" class="form-label">SMTP Port</label>
+                                        <input type="number" class="form-control" id="newSmtpPort" name="smtp_port" placeholder="587">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newImapServer" class="form-label">IMAP Server</label>
+                                        <input type="text" class="form-control" id="newImapServer" name="imap_server" placeholder="imap.gmail.com">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="newImapPort" class="form-label">IMAP Port</label>
+                                        <input type="number" class="form-control" id="newImapPort" name="imap_port" placeholder="993">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'whatsapp':
+                    specificFields = `
+                        <div class="mb-3">
+                            <label for="newTwilioAccountSid" class="form-label">Twilio Account SID</label>
+                            <input type="text" class="form-control" id="newTwilioAccountSid" name="twilio_account_sid" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newTwilioAuthToken" class="form-label">Twilio Auth Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="newTwilioAuthToken" name="twilio_auth_token" required>
+                                <button class="btn btn-outline-secondary toggle-visibility" type="button">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newTwilioPhoneNumber" class="form-label">Twilio Phone Number</label>
+                            <input type="text" class="form-control" id="newTwilioPhoneNumber" name="twilio_phone_number" placeholder="+1234567890" required>
+                            <div class="form-text">Include country code (e.g., +1 for US)</div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'messenger':
+                    specificFields = `
+                        <div class="mb-3">
+                            <label for="newPageId" class="form-label">Facebook Page ID</label>
+                            <input type="text" class="form-control" id="newPageId" name="page_id" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newPageName" class="form-label">Page Name</label>
+                            <input type="text" class="form-control" id="newPageName" name="page_name" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newAccessToken" class="form-label">Access Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="newAccessToken" name="access_token" required>
+                                <button class="btn btn-outline-secondary toggle-visibility" type="button">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'sms':
+                    specificFields = `
+                        <div class="mb-3">
+                            <label for="newTwilioAccountSid" class="form-label">Twilio Account SID</label>
+                            <input type="text" class="form-control" id="newTwilioAccountSid" name="twilio_account_sid" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newTwilioAuthToken" class="form-label">Twilio Auth Token</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="newTwilioAuthToken" name="twilio_auth_token" required>
+                                <button class="btn btn-outline-secondary toggle-visibility" type="button">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="newTwilioPhoneNumber" class="form-label">Twilio Phone Number</label>
+                            <input type="text" class="form-control" id="newTwilioPhoneNumber" name="twilio_phone_number" placeholder="+1234567890" required>
+                            <div class="form-text">Include country code (e.g., +1 for US)</div>
+                        </div>
+                    `;
+                    break;
+                
+                case 'web':
+                    specificFields = `
+                        <div class="mb-3">
+                            <label for="webPrimaryColor" class="form-label">Primary Color</label>
+                            <input type="color" class="form-control form-control-color" id="webPrimaryColor" name="primary_color" value="#0d6efd">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="webPosition" class="form-label">Widget Position</label>
+                            <select class="form-select" id="webPosition" name="widget_position">
+                                <option value="bottom-right">Bottom Right</option>
+                                <option value="bottom-left">Bottom Left</option>
+                                <option value="top-right">Top Right</option>
+                                <option value="top-left">Top Left</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="webWelcomeMessage" class="form-label">Welcome Message</label>
+                            <textarea class="form-control" id="webWelcomeMessage" name="welcome_message" rows="2">How can I help you today?</textarea>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            formContainer.innerHTML += specificFields;
+            
+            // Add event listeners for toggle visibility buttons
+            document.querySelectorAll('.toggle-visibility').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const input = this.previousElementSibling;
+                    const icon = this.querySelector('i');
+                    
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                });
+            });
+            
+            // Show/hide custom server settings for email
+            if (channelType === 'email') {
+                document.getElementById('newEmailProvider').addEventListener('change', function() {
+                    const serverSettings = document.getElementById('customServerSettings');
+                    if (this.value === 'imap' || this.value === 'smtp') {
+                        serverSettings.classList.remove('d-none');
+                    } else {
+                        serverSettings.classList.add('d-none');
+                    }
+                });
+            }
+        }
+        
+        // Add handler for main Save Changes button
+        document.querySelector('.btn-save').addEventListener('click', function() {
+            // Show loading state
+            this.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Saving...';
+            this.disabled = true;
+            
+            // Gather form data
+            const form = document.getElementById('chatbotEditForm');
+            const formData = new FormData(form);
+            
+            // Convert to JSON
+            const chatbotData = {
+                chatbot_id: window.chatbotData.chatbot_id,
+                name: formData.get('name'),
+                description: formData.get('description'),
+                prompt: formData.get('prompt'),
+                llm_provider: formData.get('llm_provider'),
+                llm_model: formData.get('llm_model'),
+                is_active: document.getElementById('is_active')?.checked || false,
+                is_public: document.getElementById('is_public')?.checked || false
+            };
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            
+            // Send API request
+            fetch(`/chat/update-chatbot/${window.chatbotData.chatbot_id}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(chatbotData)
+            })
+            .then(response => {
+                // Check if the response is valid JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // If response is not JSON, throw an error to be caught by catch block
+                    throw new Error('Invalid response format from server');
+                }
+            })
+            .then(data => {
+                // Reset button state
+                this.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+                this.disabled = false;
+
+                console.log('Chatbot update response:', data);
+                console.log('Chatbot data:', data.success);
+                
+                if (data.success) {
+                    // Log success for debugging
+                    console.log('Chatbot updated successfully:', chatbotData.name);
+                    
+                    // Set success message
+                    document.getElementById('successToastMessage').innerHTML = 
+                        `<i class="fas fa-check-circle me-2"></i>Chatbot "${chatbotData.name}" updated successfully!`;
+                    
+                    // Show success toast using the pre-initialized toast
+                    successToast.show();
+                    
+                    // Update chatbot data in window object
+                    Object.assign(window.chatbotData, chatbotData);
+                    
+                    // Update chatbot name display if it changed
+                    if (window.chatbotData.name !== chatbotData.name) {
+                        document.getElementById('chatbotNameDisplay').innerHTML = 
+                            `<i class="fas fa-robot me-2"></i>${chatbotData.name}`;
+                    }
+                } else {
+                    // Show error toast
+                    const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+                    const errorToastBody = document.querySelector('#errorToastMessage');
+                    errorToastBody.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${data.error || 'Error updating chatbot. Please try again.'}`;
+                    errorToast.show();
+                }
+            })
+            .catch(error => {
+                console.error('Error updating chatbot:', error);
+                // Reset button state
+                this.innerHTML = '<i class="fas fa-save me-2"></i>Save Changes';
+                this.disabled = false;
+                
+                // Show error toast
+                const errorToast = new bootstrap.Toast(document.getElementById('errorToast'));
+                const errorToastBody = document.querySelector('#errorToastMessage');
+                errorToastBody.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>Network error. Please try again.`;
+                errorToast.show();
+            });
+        });
+    });
+</script>
 {% endblock %} 

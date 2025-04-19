@@ -45,7 +45,12 @@
     position: sticky;
     top: 20px;
     height: auto;
+    background: none !important;
     z-index: 10;
+}
+
+.fixed-chatbox-container .card{
+    background: none !important;
 }
 
 .fixed-chatbox-container .card {
@@ -119,13 +124,12 @@
 .code-editor {
     background-color: #ffffff;
     color: #2d3748;
-    font-family: 'Arial', sans-serif;
+    /* font-family: ; */
     padding: 1rem;
     border: none;
     resize: none;
     line-height: 1.5;
     font-size: 0.9rem;
-    height: 200px;
 }
 
 .code-editor:focus {
@@ -136,9 +140,22 @@
 
 /* Settings Group */
 .settings-group {
-    margin-bottom: 1.5rem;
-    padding-bottom: 1.5rem;
     border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+}
+
+#chatbot_description{
+    font-size: 12px;
+
+}
+
+.settings-group input{
+    font-size: 14px !important;
+}
+
+.settings-group select{
+    font-size: 14px !important;
 }
 
 .settings-group:last-child {

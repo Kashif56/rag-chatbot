@@ -130,18 +130,16 @@
                                         <select class="form-select" id="llm_provider" name="llm_provider" required>
                                             <option value="" selected disabled>Select a provider</option>
                                             <option value="openai">OpenAI</option>
-                                            <option value="anthropic">Anthropic</option>
-                                            <option value="google">Google AI</option>
-                                            <option value="mistral">Mistral AI</option>
-                                            <option value="llama">Meta Llama</option>
+                                            <option value="google">Google</option>
+                                            <option value="deepseek">DeepSeek</option>
                                         </select>
                                         <div class="invalid-feedback">Please select an LLM provider.</div>
                                     </div>
                                     
                                     <div class="col-md-6">
                                         <label for="llm_model" class="form-label fw-medium">LLM Model</label>
-                                        <select class="form-select" id="llm_model" name="llm_model" required>
-                                            <option value="" selected disabled>Select a model</option>
+                                        <select class="form-select" id="llm_model" name="llm_model" required disabled>
+                                            <option value="" selected disabled>Select a provider first</option>
                                             <!-- Models will be populated dynamically based on provider -->
                                         </select>
                                         <div class="invalid-feedback">Please select an LLM model.</div>
@@ -149,7 +147,13 @@
                                 </div>
                             </div>
                             
-              
+                            <div class="system-prompt mb-4">
+                                <label for="chatbot_prompt" class="form-label fw-medium">System Prompt</label>
+                                <textarea class="form-control" id="chatbot_prompt" name="prompt" rows="5" placeholder="Enter instructions that define how your chatbot should behave and respond..."></textarea>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i> The system prompt defines the personality and behavior of your chatbot.
+                                </div>
+                            </div>
                             
                             <div class="step-buttons">
                                 <button type="button" class="btn btn-outline-secondary prev-step"><i class="bi bi-arrow-left me-1"></i> Back</button>
@@ -476,6 +480,10 @@
                                     <div class="review-item">
                                         <div class="review-label">Model</div>
                                         <div class="review-value" id="review-model">GPT-3.5 Turbo</div>
+                                    </div>
+                                    <div class="review-item">
+                                        <div class="review-label">System Prompt</div>
+                                        <div class="review-value" id="review-prompt">No custom prompt provided</div>
                                     </div>
                                     <div class="review-item">
                                         <div class="review-label">Knowledge Base Only</div>
