@@ -45,6 +45,10 @@ class Chatbot(models.Model):
 
     def __str__(self):
         return self.name
+    
+
+    def get_messages_count(self):
+        return self.conversation_set.aggregate(total_messages=models.Sum('messages'))['total_messages'] or 0
 
 # ---------- Channel (Base) ----------
 class Channel(models.Model):
@@ -106,11 +110,11 @@ class MessengerChannel(models.Model):
 # ---------- Message & Conversation ----------
 class Message(models.Model):
     message_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    chatbot = models.ForeignKey(Chatbot, on_delete=models.CASCADE)
+    conversation = models.ForeignKey('Conversation', on_delete=models.CASCADE, related_name="messages")
     content = models.TextField(null=True, blank=True)
+    role = models.CharField(max_length=255, choices=[('user', 'User'), ('assistant', 'Assistant')])
 
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.content[:50]
@@ -121,7 +125,7 @@ class Conversation(models.Model):
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
 
     from_number = models.CharField(max_length=255)
-    messages = models.ManyToManyField(Message)
+  
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -63,18 +63,11 @@ def add_data_source(request, kb_id=None):
         return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
     
     try:
-        # Initialize Pinecone
-        pc = initialize_pinecone()
-
-        print(pc)
-        
-        # Get the knowledge base
+        initialize_pinecone()
         knowledge_base = KnowledgeBase.objects.get(knowledge_base_id=kb_id)
-        
-        # Extract data from the request
+
         source_type = request.POST.get('source_type')
         
-        # Create a new data source object
         data_source = DataSource(
             kb=knowledge_base,
             source_type=source_type,
@@ -84,16 +77,13 @@ def add_data_source(request, kb_id=None):
         documents = []
         url_contents = {}  # Will store URL to content mapping
         
-        # Process based on source type
         if source_type == 'file':
             file_obj = request.FILES.get('file')
             if not file_obj:
                 return JsonResponse({'error': 'No file uploaded'}, status=400)
             
-            # Save the file
             data_source.file = file_obj
             
-            # Create a temporary file in the user's temp directory instead of /tmp
             temp_dir = tempfile.mkdtemp()
             temp_file_path = os.path.join(temp_dir, file_obj.name)
             
@@ -101,17 +91,15 @@ def add_data_source(request, kb_id=None):
                 for chunk in file_obj.chunks():
                     destination.write(chunk)
             
-            # Process file with Langchain and get documents
             from chat.pinecone import load_documents, process_documents, upsert_documents, get_documents_text
             try:
                 documents = load_documents(temp_file_path)
                 
-                # Store the text content using the utility function
                 data_source.text_content = get_documents_text(documents)[:100000]  # Limit text size if needed
                 if not data_source.text_content:
                     data_source.text_content = f"File: {file_obj.name} (No content extracted)"
                 
-                # Clean up temp file
+                    # Clean up temp file
                 if os.path.exists(temp_file_path):
                     os.remove(temp_file_path)
                 # Remove temp directory
@@ -161,6 +149,18 @@ def add_data_source(request, kb_id=None):
                 # Save the primary data source
                 data_source.save()
                 
+                # Create namespace for the knowledge base
+                namespace = knowledge_base.chatbot.name
+                
+                # Process and embed documents for the primary URL
+                primary_docs = [doc for doc in documents if doc.metadata.get('source') == url]
+                if primary_docs:
+                    primary_chunks = process_documents(primary_docs)
+                    if primary_chunks:
+                        vector_store, uuids = upsert_documents(primary_chunks, namespace=namespace)
+                        data_source.chunk_ids = uuids
+                        data_source.save()
+                
                 # Create additional data sources for each followed URL
                 child_url_sources = []
                 for scraped_url, content in url_contents.items():
@@ -182,11 +182,26 @@ def add_data_source(request, kb_id=None):
                             text_content=content[:100000]  # Limit text size if needed
                         )
                         child_source.save()
+                        
+                        # Process and embed documents for this child URL
+                        child_docs = [doc for doc in documents if doc.metadata.get('source') == scraped_url]
+                        if child_docs:
+                            child_chunks = process_documents(child_docs)
+                            if child_chunks:
+                                vector_store, child_uuids = upsert_documents(child_chunks, namespace=namespace)
+                                child_source.chunk_ids = child_uuids
+                                child_source.save()
+                        
                         child_url_sources.append(child_source)
                         
-                # Add child sources to the main data source for processing
-                if child_url_sources:
-                    print(f"Created {len(child_url_sources)} additional data sources for followed URLs")
+                # Return success with count of child sources
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'Data source added successfully',
+                    'data_source_id': data_source.id,
+                    'chunks_processed': len([doc for doc in documents if doc.metadata.get('source') == url]),
+                    'child_sources': len(child_url_sources)
+                })
                 
             except Exception as e:
                 return JsonResponse({'error': f'Error processing URL: {str(e)}'}, status=400)
@@ -226,21 +241,24 @@ def add_data_source(request, kb_id=None):
                     })
                 
                 # Create a namespace using the data source ID consistently
-                namespace = f"{request.user.username}"
+                namespace = knowledge_base.chatbot.name
                 
                 # Upsert to vector store and handle any errors
                 try:
-                    vector_store = upsert_documents(chunks, namespace=namespace)
+                    vector_store, uuids = upsert_documents(chunks, namespace=namespace)
                     
-                    print(f"Successfully created vector store for source {data_source.id} with {len(chunks)} chunks in namespace: {namespace}")
-                    
-                    # Return success response
+                    # Store the chunk UUIDs in the DataSource model
+                    data_source.chunk_ids = uuids
+                    data_source.save()
+                  
                     return JsonResponse({
+                        'success': True,
                         'status': 'success',
                         'message': 'Data source added successfully',
                         'data_source_id': data_source.id,
                         'chunks_processed': len(chunks),
-                        'child_sources': len(url_contents) - 1 if source_type == 'url' and url_contents else 0
+                        'child_sources': len(url_contents) - 1 if source_type == 'url' and url_contents else 0,
+                        'redirect_url': reverse('kb:knowledge_base_detail', args=[knowledge_base.knowledge_base_id])
                     })
                 except Exception as e:
                     # Log the vectorization error but don't delete the data source
@@ -289,54 +307,53 @@ def delete_data_source(request, source_id):
         return JsonResponse({'error': 'Only POST method is allowed'}, status=405)
     
     try:
-        # Get the data source
         data_source = DataSource.objects.get(id=source_id)
         
-        # Get the knowledge base ID for redirect
         kb_id = data_source.kb.knowledge_base_id
         chatbot = data_source.kb.chatbot
         
-        # Delete vector store data if possible
         try:
             from chat.pinecone import pc, INDEX_NAME
             namespace = f"{chatbot.name}"
             index = pc.Index(INDEX_NAME)
-            index.delete(namespace=namespace)
+            
+            if data_source.chunk_ids:
+                deleted_vectors = index.delete(ids=data_source.chunk_ids, namespace=namespace)
+              
         except Exception as e:
-            # Log the error but continue with deletion
             print(f"Error deleting vectors for source {source_id}: {str(e)}")
         
-        # Delete the data source
         data_source.delete()
         
-        # Return success response
         return JsonResponse({
-            'status': 'success',
+            'success': True,
             'message': 'Data source deleted successfully',
             'redirect_url': reverse('kb:knowledge_base_detail', args=[kb_id])
         })
         
     except DataSource.DoesNotExist:
-        return JsonResponse({'error': 'Data source not found'}, status=404)
+        return JsonResponse({'error': 'Data source not found', 'success': False}, status=404)
+    
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return JsonResponse({'error': str(e)}, status=500)
+        return JsonResponse({
+            'success': False,
+            'message': str(e),
+            'redirect_url': reverse('kb:knowledge_base_detail', args=[kb_id])
+        })
 
 
 def source_detail(request, source_id):
     try:
-        # Get the data source
         data_source = DataSource.objects.get(id=source_id)
-        
-        # Render the detail page
         return render(request, 'dashboard/source_detail.html', {
             'source': data_source,
             'knowledge_base': data_source.kb
         })
         
     except DataSource.DoesNotExist:
-        # Redirect to knowledge bases page if source doesn't exist
+       
         messages.error(request, 'Data source not found')
         return redirect('kb:knowledge_base')
     except Exception as e:

@@ -16,6 +16,7 @@ class DataSource(models.Model):
     text_title = models.CharField(max_length=200)
     text_content = models.TextField()
     source_type = models.CharField(max_length=200, choices=SOURCE_TYPE_CHOICES)
+    chunk_ids = models.JSONField(blank=True, null=True, default=list)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

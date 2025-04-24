@@ -6,7 +6,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 import json
-from chat.models import Chatbot, Channel, EmailChannel, WhatsAppChannel, MessengerChannel
+from chat.models import Chatbot, Channel, EmailChannel, WhatsAppChannel, MessengerChannel, Message, Conversation
 from django.db.utils import OperationalError
 
 
@@ -14,7 +14,16 @@ from django.db.utils import OperationalError
 @login_required
 def dashboard(request):
     chatbots = Chatbot.objects.filter(user=request.user)
-    return render(request, 'dashboard/dashboard.html', {'chatbots': chatbots})
+    channels = Channel.objects.filter(chatbot__in=chatbots)
+    
+    conversations = Conversation.objects.filter(chatbot__in=chatbots)
+
+    context = {
+        'chatbots': chatbots,
+        'channels': channels,
+        'conversations': conversations
+    }
+    return render(request, 'dashboard/dashboard.html', context)
 
 
 
@@ -520,4 +529,94 @@ def delete_channel(request, channel_id):
             'success': False,
             'error': f'An unexpected error occurred: {str(e)}'
         }, status=500)
+
+def public_conversation(request, chatbot_id):
+    try:
+        chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
+        channels = Channel.objects.filter(chatbot=chatbot)
+        
+        # Get recent messages for this chatbot
+        recent_messages = Message.objects.filter(
+            conversation__chatbot=chatbot
+        ).order_by('-created_at')[:10]
+        
+        context = {
+            'chatbot': chatbot,
+            'channels': channels,
+            'recent_messages': recent_messages
+        }
+        return render(request, 'core/conversation.html', context)
+    except Chatbot.DoesNotExist:
+        return render(request, 'core/404.html', status=404)
+
+@csrf_exempt
+def chat_api(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    
+    try:
+        data = json.loads(request.body)
+        message = data.get('message')
+        chatbot_id = data.get('chatbot_id')
+        
+        if not message or not chatbot_id:
+            return JsonResponse({'error': 'Message and chatbot_id are required'}, status=400)
+        
+        # Get the chatbot
+        chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
+        channel = Channel.objects.get(chatbot=chatbot, channel_type='web')
+        # Create or get conversation
+        conversation, created = Conversation.objects.get_or_create(
+            chatbot=chatbot,
+            from_number=12345,
+            channel=channel
+        )
+        
+        # Save user message
+        user_message = Message.objects.create(  
+            conversation=conversation,
+            content=message,
+            role='user'
+        )
+        
+        # Get conversation history for context
+        conversation_history = Message.objects.filter(
+            conversation=conversation
+        ).order_by('created_at')[:10]  # Limit to last 10 messages for context
+        
+        # Format conversation history for the LLM
+        formatted_history = []
+        for msg in conversation_history:
+            role = "user" if msg.role == 'user' else "assistant"
+            formatted_history.append({"role": role, "content": msg.content})
+        
+     
+        from chat.pinecone import create_rag_chain
+        
+        # Create the RAG chain with the chatbot's namespace
+        rag_chain = create_rag_chain(chatbot, namespace=chatbot.name)
+        
+        # Pass the message and the full formatted history to the chain
+        bot_response = rag_chain(message, formatted_history)
+        
+      
+        # Save bot response
+        bot_message = Message.objects.create(
+            conversation=conversation,
+            content=bot_response,
+            role='assistant'
+        )
+        
+        return JsonResponse({
+            'response': bot_response,
+            'message_id': str(bot_message.message_id)
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+    except Chatbot.DoesNotExist:
+        return JsonResponse({'error': 'Chatbot not found'}, status=404)
+    except Exception as e:
+        print(f"Error generating response: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
 

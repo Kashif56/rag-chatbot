@@ -86,7 +86,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission
     const submitBtn = document.getElementById('submitDataSourceBtn');
     if (submitBtn) {
-        submitBtn.addEventListener('click', function() {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
             const form = document.getElementById('addDataSourceForm');
             const sourceType = document.querySelector('input[name="source_type"]:checked');
             const modalBody = document.querySelector('#addDataSourceModal .modal-body');
@@ -96,11 +97,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Add the form action dynamically based on the KB ID
+        
             const kbId = document.querySelector('input[name="kb_id"]').value;
-            form.action = `/kb/add-source/${kbId}/`;
-            
-            // Form validation based on selected type
+          
             let isValid = true;
             
             switch (sourceType.value) {
@@ -169,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Use AJAX to submit the form
                 const formData = new FormData(form);
                 
-                fetch(form.action, {
+                fetch(`/kb/add-source/${kbId}/`, {
                     method: 'POST',
                     body: formData,
                     headers: {
@@ -180,16 +179,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     // Remove loader
                     const overlay = document.querySelector('.processing-overlay');
-                    if (overlay) overlay.remove();
-                    
-                    if (data.status === 'success') {
-                        // Success - reload the page or show success message
-                        window.location.reload();
-                    } else {
-                        // Error handling
-                        alert(data.error || 'There was an error processing your data source.');
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = 'Add Data Source';
+                    if (overlay) {
+                        if (data.status === 'success' || data.success) {
+                            // Show success message
+                            overlay.innerHTML = `
+                                <div class="text-center">
+                                    <div class="text-success mb-3">
+                                        <i class="fas fa-check-circle" style="font-size: 3rem;"></i>
+                                    </div>
+                                    <h5 class="mb-1">Successfully Added!</h5>
+                                    <p class="text-muted mb-0">${data.message || 'Data source added successfully'}</p>
+                                </div>
+                            `;
+                            
+                            // Redirect after a short delay to show the success message
+                            setTimeout(() => {
+                                window.location.href = data.redirect_url || window.location.href;
+                            }, 1500);
+                        } else {
+                            // Error handling
+                            alert(data.error || data.message || 'There was an error processing your data source.');
+                            overlay.remove();
+                            submitBtn.disabled = false;
+                            submitBtn.innerHTML = 'Add Data Source';
+                        }
                     }
                 })
                 .catch(error => {
@@ -280,8 +293,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             window.location.href = data.redirect_url || window.location.href;
                         }
                     } else {
-                        // Error handling
-                        alert(data.error || 'There was an error deleting the data source.');
+                        // Error handling - use message key if error key is not present
+                        alert(data.error || data.message || 'There was an error deleting the data source.');
                         
                         // Remove loader and reset button
                         const overlay = document.querySelector('#deleteSourceModal .processing-overlay');

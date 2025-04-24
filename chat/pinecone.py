@@ -169,15 +169,6 @@ def load_documents(source, content=None, follow_links=False, max_depth=1, max_in
 
 
 def get_documents_text(documents):
-    """
-    Extract text content from a list of documents.
-    
-    Args:
-        documents: List of Document objects
-        
-    Returns:
-        String containing the combined text content
-    """
     if not documents:
         return ""
     
@@ -192,9 +183,6 @@ def get_documents_text(documents):
 
 
 def process_documents(documents):
-    """
-    Process documents to create chunks.
-    """
     try:
         text_splitter = create_text_splitter()
         
@@ -218,14 +206,20 @@ def process_documents(documents):
 def upsert_documents(documents, namespace=None):
     embeddings = get_embeddings_model()
     
+    # Generate UUIDs for documents first
+    uuids = [str(uuid.uuid4()) for _ in range(len(documents))]
+    
+    # Create vector store with the generated UUIDs
     vector_store = PineconeVectorStore.from_documents(
         documents=documents,
         embedding=embeddings,
         index_name=INDEX_NAME,
-        namespace=namespace
+        namespace=namespace,
+        ids=uuids  # Pass the IDs to the from_documents method
     )
     
-    return vector_store
+    # Remove the duplicate add_documents call
+    return vector_store, uuids
 
 def create_retriever(namespace=None):
     embeddings = get_embeddings_model()
@@ -340,5 +334,154 @@ def scrape_url(url, follow_links=False, max_depth=1, max_internal_links=20, dyna
     result = scrape_single_url(url)
     print(f"Completed scraping of {url}: found {len(result)} total documents")
     return result, url_contents
+
+def generate_llm_response(chatbot, message, context="", conversation_history=None):
+    if conversation_history is None:
+        conversation_history = []
+    
+    bot_response = ""
+    try:
+        # Generate response based on the LLM provider
+        if chatbot.llm_provider.lower() == 'openai':
+
+            from openai import OpenAI
+
+            client = OpenAI(api_key=OPENAI_API_KEY)
+
+            system_message = f"""You are {chatbot.name}, an AI assistant that helps users with their questions using the provided context. Don't mention the context in your response. Do not respond with phrases like 'As per provided context' or similar.
+            {chatbot.prompt}
+            
+            Use the following context to answer the user's question:
+            {context}
+            
+            Remember previous conversation while answering if relevant.
+            """
+            
+            messages = [{"role": "system", "content": system_message}]
+            
+          
+            messages.extend(conversation_history)
+            
+            # Add the current message if not already in conversation history
+            if not any(msg.get("content") == message and msg.get("role") == "user" for msg in conversation_history):
+                messages.append({"role": "user", "content": message})
+            
+          
+            
+            # Call OpenAI API
+            response = client.chat.completions.create(
+                model=chatbot.llm_model,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=1000
+            )
+            
+            bot_response = response.choices[0].message.content
+            
+        elif chatbot.llm_provider.lower() == 'google':
+            from django.conf import settings
+            
+            # Configure Google Generative AI
+            api_key = settings.GOOGLE_API_KEY or GOOGLE_API_KEY
+            genai.configure(api_key=api_key)
+            
+            # Create model and generate response
+            model = genai.GenerativeModel(chatbot.llm_model)
+            
+            # Prepare conversation history for Google's format
+            chat_history = []
+            for msg in conversation_history:
+                if msg['role'] == 'user':
+                    chat_history.append({"role": "user", "parts": [msg['content']]})
+                else:
+                    chat_history.append({"role": "model", "parts": [msg['content']]})
+            
+            # Create prompt with context
+            system_prompt = f"""You are {chatbot.name}, an AI assistant that helps users with their questions.
+            {chatbot.prompt}
+            
+            Use the following context to answer the user's question:
+            {context}
+            
+            Remember previous conversation while answering if relevant.
+            """
+
+          
+            # Generate response
+            chat = model.start_chat(history=chat_history)
+            response = chat.send_message(system_prompt + "\n\nUser question: " + message)
+            
+            bot_response = response.text
+            
+        else:
+            # Default response if no valid LLM provider is configured
+            bot_response = "I'm sorry, I couldn't generate a response at this time."
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"Error generating LLM response: {str(e)}")
+        bot_response = "I encountered an error while generating a response. Please try again later."
+    
+    return bot_response
+
+
+def create_rag_chain(chatbot, namespace=None):
+    if namespace is None:
+        namespace = chatbot.name
+    
+    print(f"Creating RAG chain for namespace: {namespace}")
+    
+    try:
+        # Create retriever using the existing function
+        retriever = create_retriever(namespace=namespace)
+        
+        def generate_response(message, conversation_history=None):
+            if conversation_history is None:
+                conversation_history = []
+                
+            print(f"RAG processing message with {len(conversation_history)} history items")
+                
+            try:
+                # Get relevant documents based on the query
+                docs = retriever.invoke(message)
+                
+                print(f"Retrieved {len(docs)} documents from vector store")
+                
+                # Combine document content into context
+                context = "\n\n".join([doc.page_content for doc in docs])
+                
+                # Generate response with context and conversation history
+                return generate_llm_response(
+                    chatbot=chatbot,
+                    message=message,
+                    context=context,
+                    conversation_history=conversation_history
+                )
+            except Exception as e:
+                print(f"Error in RAG chain: {str(e)}")
+                
+                # Fallback to generate response without context
+                return generate_llm_response(
+                    chatbot=chatbot,
+                    message=message,
+                    conversation_history=conversation_history
+                )
+        
+        return generate_response
+    
+    except Exception as e:
+        print(f"Error creating RAG chain: {str(e)}")
+        
+        
+        
+        def fallback_response(message, conversation_history=None):
+            return generate_llm_response(
+                chatbot=chatbot,
+                message=message,
+                conversation_history=conversation_history
+            )
+        
+        return fallback_response
 
 
