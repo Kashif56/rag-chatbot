@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.db import transaction
 import json
 from chat.models import Chatbot, Channel, EmailChannel, WhatsAppChannel, MessengerChannel, Message, Conversation
+from kb.models import KnowledgeBase, DataSource
 from django.db.utils import OperationalError
 
 
@@ -174,13 +175,22 @@ def edit_chatbot_page(request, chatbot_id):
                 'page_name': messenger_config.page_name,
                 'access_token': messenger_config.access_token,
             })
-            
     
-
+    # Get knowledge base and data sources for this chatbot
+    knowledge_base = None
+    data_sources = []
+    try:
+        knowledge_base = KnowledgeBase.objects.get(chatbot=chatbot)
+        data_sources = DataSource.objects.filter(kb=knowledge_base)
+    except KnowledgeBase.DoesNotExist:
+        # No knowledge base exists for this chatbot
+        pass
     
     context = {
         'chatbot': chatbot,
         'channels': channels_data,
+        'knowledge_base': knowledge_base,
+        'data_sources': data_sources,
     }
     
     return render(request, 'dashboard/chatbot_detail.html', context)
@@ -619,4 +629,8 @@ def chat_api(request):
     except Exception as e:
         print(f"Error generating response: {str(e)}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
 

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from . import channels_response_views
 
 app_name = 'chat'
 
@@ -16,4 +17,8 @@ urlpatterns = [
     # Public conversation routes
     path('chat/<str:chatbot_id>/', views.public_conversation, name='public_conversation'),
     path('api/chat/', views.chat_api, name='chat_api'),
+    
+    # Twilio webhook endpoints
+    path('api/webhook/sms/<str:chatbot_id>/', channels_response_views.handle_sms, name='handle_sms'),
+    path('api/webhook/whatsapp/<str:chatbot_id>/', channels_response_views.handle_whatsapp, name='handle_whatsapp'),
 ]

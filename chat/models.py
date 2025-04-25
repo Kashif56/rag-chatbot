@@ -48,7 +48,12 @@ class Chatbot(models.Model):
     
 
     def get_messages_count(self):
-        return self.conversation_set.aggregate(total_messages=models.Sum('messages'))['total_messages'] or 0
+        messages = 0
+        conversation = Conversation.objects.filter(chatbot=self)
+        for chat in conversation:
+            messages += chat.messages.count()
+        return messages
+
 
 # ---------- Channel (Base) ----------
 class Channel(models.Model):
