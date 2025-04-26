@@ -21,4 +21,10 @@ urlpatterns = [
     # Twilio webhook endpoints
     path('api/webhook/sms/<str:chatbot_id>/', channels_response_views.handle_sms, name='handle_sms'),
     path('api/webhook/whatsapp/<str:chatbot_id>/', channels_response_views.handle_whatsapp, name='handle_whatsapp'),
+    
+    # Email endpoints
+    path('api/webhook/email/<str:chatbot_id>/', channels_response_views.handle_email, name='handle_email'),
+    path('api/check-emails/<str:chatbot_id>/', channels_response_views.check_emails, name='check_emails'),
+    path('api/start-email-listener/<str:chatbot_id>/', channels_response_views.start_email_listener, name='start_email_listener'),
+    path('api/stop-email-listener/<str:chatbot_id>/', channels_response_views.stop_email_listener, name='stop_email_listener'),
 ]

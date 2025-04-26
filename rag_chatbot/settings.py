@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-sd_i-ioh!i4ozys@sro+!c2kiog#wb+1r3m06q161z3uee&8bi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -141,3 +141,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
+
+
+# CSRF
+CSRF_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = ['https://64bc-39-47-8-104.ngrok-free.app']

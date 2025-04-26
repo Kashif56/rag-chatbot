@@ -137,3 +137,14 @@ class Conversation(models.Model):
 
     def __str__(self):
         return f"Conversation {self.conversation_id}"
+
+
+# ---------- Email Processing ----------
+class ProcessedEmail(models.Model):
+    """Tracks emails that have been processed to prevent duplicate processing."""
+    message_id = models.CharField(max_length=255, unique=True)
+    processed_at = models.DateTimeField(auto_now_add=True)
+    channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
+    
+    def __str__(self):
+        return f"Processed email {self.message_id[:30]}..."
