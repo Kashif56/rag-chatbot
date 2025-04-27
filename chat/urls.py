@@ -2,6 +2,7 @@ from django.urls import path
 
 from . import views
 from . import channels_response_views
+from . import google
 
 app_name = 'chat'
 
@@ -22,9 +23,9 @@ urlpatterns = [
     path('api/webhook/sms/<str:chatbot_id>/', channels_response_views.handle_sms, name='handle_sms'),
     path('api/webhook/whatsapp/<str:chatbot_id>/', channels_response_views.handle_whatsapp, name='handle_whatsapp'),
     
-    # Email endpoints
-    path('api/webhook/email/<str:chatbot_id>/', channels_response_views.handle_email, name='handle_email'),
-    path('api/check-emails/<str:chatbot_id>/', channels_response_views.check_emails, name='check_emails'),
-    path('api/start-email-listener/<str:chatbot_id>/', channels_response_views.start_email_listener, name='start_email_listener'),
-    path('api/stop-email-listener/<str:chatbot_id>/', channels_response_views.stop_email_listener, name='stop_email_listener'),
+    # Gmail OAuth and Pub/Sub webhook endpoints
+    path('google/auth/<uuid:channel_id>/', views.gmail_auth, name='gmail_auth'),
+    path('google/oauth2callback/', google.oauth2callback, name='gmail_oauth2callback'),
+    path('webhook/gmail/', google.gmail_push_notification, name='gmail_push_notification'),
+    path('google/stop-watch/', google.stop_gmail_watch, name='stop_gmail_watch'),
 ]

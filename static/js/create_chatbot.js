@@ -17,6 +17,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Setup LLM provider and model selection
     setupLLMSelection();
+    
+    // Setup Gmail connection button
+    setupGmailConnection();
 });
 
 function setupFormNavigation() {
@@ -391,42 +394,133 @@ function setupLLMSelection() {
     const providerSelect = document.getElementById('llm_provider');
     const modelSelect = document.getElementById('llm_model');
     
-    // Define available models for each provider based on models.py
-    const providerModels = {
-        'openai': [
-            { value: 'gpt-4o-mini', text: 'GPT-4o Mini' },
-            { value: 'gpt-4o', text: 'GPT-4o' },
-            { value: 'gpt-4', text: 'GPT-4' },
-            { value: 'gpt-3.5-turbo', text: 'GPT-3.5 Turbo' }
-        ],
-        'google': [
-            { value: 'gemini-1.5-pro-latest', text: 'Gemini 1.5 Pro' }
-        ],
-        'deepseek': [
-            { value: 'deepseek-chat', text: 'DeepSeek Chat' }
-        ]
-    };
-    
-    // Add event listener to populate models when provider changes
+    // When provider changes, update available models
     providerSelect.addEventListener('change', function() {
-        // Clear existing options
-        modelSelect.innerHTML = '<option value="" selected disabled>Select a model</option>';
+        const provider = this.value;
         
-        const selectedProvider = this.value;
-        if (!selectedProvider) return;
+        // Clear current options
+        modelSelect.innerHTML = '';
+        modelSelect.disabled = false;
         
-        // Get models for selected provider
-        const models = providerModels[selectedProvider] || [];
-        
-        // Add models to select element
-        models.forEach(model => {
+        // Add appropriate options based on provider
+        if (provider === 'openai') {
+            addModelOption(modelSelect, 'gpt-4o-mini', 'GPT-4o Mini');
+            addModelOption(modelSelect, 'gpt-4o', 'GPT-4o');
+            addModelOption(modelSelect, 'gpt-4', 'GPT-4');
+            addModelOption(modelSelect, 'gpt-3.5-turbo', 'GPT-3.5 Turbo');
+        } else if (provider === 'google') {
+            addModelOption(modelSelect, 'gemini-1.5-pro-latest', 'Gemini 1.5 Pro');
+        } else if (provider === 'deepseek') {
+            addModelOption(modelSelect, 'deepseek-chat', 'DeepSeek Chat');
+        } else {
+            // Add a placeholder if no provider selected
             const option = document.createElement('option');
-            option.value = model.value;
-            option.textContent = model.text;
+            option.value = '';
+            option.text = 'Select a provider first';
+            option.disabled = true;
+            option.selected = true;
             modelSelect.appendChild(option);
-        });
-        
+            modelSelect.disabled = true;
+        }
         // Enable the model select
         modelSelect.disabled = false;
     });
+    
+    function addModelOption(selectElement, value, text) {
+        const option = document.createElement('option');
+        option.value = value;
+        option.text = text;
+        selectElement.appendChild(option);
+    }
+}
+
+function setupGmailConnection() {
+    // Get the email provider select element
+    const emailProviderSelect = document.getElementById('email_provider');
+    let gmailAuthSection = document.getElementById('gmail_auth_section');
+    const emailTokenSection = document.getElementById('email_token_section');
+    const connectGmailBtn = document.getElementById('connect_gmail_btn');
+    
+    // Check if we're on the edit page or create page
+    const isEditPage = window.location.pathname.includes('/chatbot/');
+    const isCreatePage = window.location.pathname.includes('/create-chatbot/');
+    
+    // Show/hide Gmail auth section based on provider selection
+    if (emailProviderSelect) {
+        emailProviderSelect.addEventListener('change', function() {
+            const provider = this.value;
+            
+            if (provider === 'gmail') {
+                // Show Gmail auth section and hide token input
+                gmailAuthSection.classList.remove('d-none');
+                emailTokenSection.classList.add('d-none');
+                console.log('Gmail Auth Section display:', gmailAuthSection.className);
+                console.log("Email Token Section display:", emailTokenSection.className);
+            } else {
+                // Hide Gmail auth section and show token input
+                gmailAuthSection.classList.add('d-none');
+                emailTokenSection.classList.remove('d-none');
+            }
+        });
+    }
+    
+    // Handle Gmail connect button click
+    if (connectGmailBtn) {
+        connectGmailBtn.addEventListener('click', function() {
+            // If we're on the create page, we need to save the chatbot first
+            if (isCreatePage) {
+                alert('Please save the chatbot first before connecting Gmail.');
+                return;
+            }
+            
+            // Get the chatbot_id from the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            let chatbotId = urlParams.get('chatbot_id');
+            
+            // If no chatbot_id in URL, try to extract it from the pathname
+            if (!chatbotId) {
+                const pathParts = window.location.pathname.split('/');
+                for (const part of pathParts) {
+                    if (part.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+                        chatbotId = part;
+                        break;
+                    }
+                }
+            }
+            
+            if (!chatbotId) {
+                alert('Could not find chatbot ID. Please reload the page or try again.');
+                return;
+            }
+            
+            // We need to create the channel first to get a channel_id
+            // This will be a temporary channel that will be updated after OAuth
+            const formData = new FormData();
+            formData.append('channel_type', 'email');
+            formData.append('email_address', document.getElementById('email_address').value || '');
+            formData.append('email_provider', 'gmail');
+            
+            // Create a temporary channel to get a channel_id
+            fetch(`/chat/add-channel/${chatbotId}/`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.channel_id) {
+                    // Redirect to Gmail auth endpoint with the channel_id
+                    window.location.href = `/chat/google/auth/${data.channel_id}/`;
+                } else {
+                    alert('Failed to create email channel. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while connecting to Gmail. Please try again.');
+            });
+        });
+    }
 } 

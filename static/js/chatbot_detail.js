@@ -200,41 +200,71 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function populateChannelForm(channelType, channelId) {
-        const channelsData = window.channelsData || [];
-        const channel = channelsData.find(c => c.channel_id === channelId);
+        // Hide all channel-specific settings
+        document.querySelectorAll('.channel-specific-settings').forEach(el => {
+            el.classList.add('d-none');
+        });
         
-        if (!channel) return;
+        // Show the appropriate settings for this channel type
+        const settingsDiv = document.getElementById(`${channelType.toLowerCase()}Settings`);
+        if (settingsDiv) {
+            settingsDiv.classList.remove('d-none');
+        }
         
-        // Populate specific channel data based on type
-        switch(channelType) {
-            case 'email':
-                if (channel.email_config) {
-                    document.getElementById('emailAddress').value = channel.email_config.email_address || '';
-                    document.getElementById('emailProvider').value = channel.email_config.provider || '';
-                    document.getElementById('emailAccessToken').value = channel.email_config.access_token || '';
-                    document.getElementById('emailRefreshToken').value = channel.email_config.refresh_token || '';
-                    document.getElementById('smtpServer').value = channel.email_config.smtp_server || '';
-                    document.getElementById('smtpPort').value = channel.email_config.smtp_port || '';
-                    document.getElementById('imapServer').value = channel.email_config.imap_server || '';
-                    document.getElementById('imapPort').value = channel.email_config.imap_port || '';
-                }
-                break;
+        // Find the channel data
+        const channelData = window.channelsData.find(c => c.channel_id === channelId);
+        
+        if (!channelData) {
+            console.error('Channel data not found for ID:', channelId);
+            return;
+        }
+        
+        // Store the channel ID in the modal for reference
+        document.getElementById('channelManagementModal').setAttribute('data-current-channel-id', channelId);
+        
+        // Populate form fields based on channel type
+        if (channelType.toLowerCase() === 'email') {
+            document.getElementById('emailAddress').value = channelData.email_address || '';
+            document.getElementById('emailProvider').value = channelData.provider || 'gmail';
+            document.getElementById('emailAccessToken').value = channelData.access_token || '';
+            document.getElementById('emailRefreshToken').value = channelData.refresh_token || '';
+            document.getElementById('smtpServer').value = channelData.smtp_server || '';
+            document.getElementById('smtpPort').value = channelData.smtp_port || '';
+            document.getElementById('imapServer').value = channelData.imap_server || '';
+            document.getElementById('imapPort').value = channelData.imap_port || '';
+            
+            // Show/hide Gmail connection section
+            const gmailAuthSection = document.getElementById('gmail_auth_section');
+            const emailTokenSection = document.getElementById('email_token_section');
+            
+            if (channelData.provider === 'gmail') {
+                gmailAuthSection.classList.remove('d-none');
                 
-            case 'whatsapp':
-                if (channel.whatsapp_config) {
-                    document.getElementById('twilioAccountSid').value = channel.whatsapp_config.twilio_account_sid || '';
-                    document.getElementById('twilioAuthToken').value = channel.whatsapp_config.twilio_auth_token || '';
-                    document.getElementById('twilioPhoneNumber').value = channel.whatsapp_config.twilio_phone_number || '';
-                }
-                break;
+                // Check if Gmail is connected (has access token)
+                const gmailNotConnected = document.getElementById('gmail_not_connected');
+                const gmailConnected = document.getElementById('gmail_connected');
                 
-            case 'messenger':
-                if (channel.messenger_config) {
-                    document.getElementById('pageId').value = channel.messenger_config.page_id || '';
-                    document.getElementById('pageName').value = channel.messenger_config.page_name || '';
-                    document.getElementById('accessToken').value = channel.messenger_config.access_token || '';
+                if (channelData.access_token) {
+                    gmailNotConnected.classList.add('d-none');
+                    gmailConnected.classList.remove('d-none');
+                    emailTokenSection.classList.add('d-none');
+                } else {
+                    gmailNotConnected.classList.remove('d-none');
+                    gmailConnected.classList.add('d-none');
+                    emailTokenSection.classList.remove('d-none');
                 }
-                break;
+            } else {
+                gmailAuthSection.classList.add('d-none');
+                emailTokenSection.classList.remove('d-none');
+            }
+            
+            // Show/hide server settings based on provider
+            const serverSettings = document.querySelector('.server-settings');
+            if (channelData.provider === 'imap' || channelData.provider === 'smtp') {
+                serverSettings.classList.remove('d-none');
+            } else {
+                serverSettings.classList.add('d-none');
+            }
         }
     }
     
@@ -576,6 +606,12 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('channelConfigSection').classList.remove('d-none');
         document.getElementById('addNewChannelBtn').classList.remove('d-none');
         
+        // Hide static Gmail connection section by default
+        const staticGmailSection = document.getElementById('static_gmail_connection_section');
+        if (staticGmailSection) {
+            staticGmailSection.style.display = 'none';
+        }
+        
         // Generate form based on channel type
         const formContainer = document.getElementById('newChannelForm');
         formContainer.innerHTML = '';
@@ -611,17 +647,29 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="mb-3">
                         <label for="newEmailProvider" class="form-label">Provider</label>
                         <select class="form-select" id="newEmailProvider" name="provider" required>
-                            <option value="gmail">Gmail</option>
+                            <option value="gmail" selected>Gmail</option>
                             <option value="outlook">Outlook</option>
                             <option value="imap">IMAP</option>
                             <option value="smtp">SMTP Custom</option>
                         </select>
                     </div>
                     
-                    <div class="mb-3">
+                    <!-- Gmail Connection Section for New Channel -->
+                    <div id="new_gmail_connection_section" class="mb-3">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i>Connect your Gmail account to enable email notifications.</p>
+                                <button type="button" id="new_connect_gmail_btn" class="btn btn-primary btn-sm">
+                                    <i class="fab fa-google me-1"></i>Connect Gmail Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3 token-input-section d-none">
                         <label for="newEmailAccessToken" class="form-label">Access Token</label>
                         <div class="input-group">
-                            <input type="password" class="form-control" id="newEmailAccessToken" name="access_token" required>
+                            <input type="password" class="form-control" id="newEmailAccessToken" name="access_token">
                             <button class="btn btn-outline-secondary toggle-visibility" type="button">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -783,12 +831,123 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show/hide custom server settings for email
         if (channelType === 'email') {
-            document.getElementById('newEmailProvider').addEventListener('change', function() {
-                const serverSettings = document.getElementById('customServerSettings');
-                if (this.value === 'imap' || this.value === 'smtp') {
-                    serverSettings.classList.remove('d-none');
+            console.log('Email channel selected, setting up Gmail connection section');
+            
+            // Show the static Gmail connection section if Gmail is selected
+            const staticGmailSection = document.getElementById('static_gmail_connection_section');
+            if (staticGmailSection) {
+                console.log('Static Gmail section found, showing it');
+                staticGmailSection.style.display = 'block';
+                
+                // Add click handler for the static Gmail connect button
+                const staticConnectGmailBtn = document.getElementById('static_connect_gmail_btn');
+                if (staticConnectGmailBtn) {
+                    console.log('Static Gmail connect button found, adding click handler');
+                    staticConnectGmailBtn.addEventListener('click', function() {
+                        alert('Please save this channel first before connecting Gmail.');
+                    });
+                }
+            }
+            
+            const emailProvider = document.getElementById('newEmailProvider');
+            if (emailProvider) {
+                console.log('Email provider select found, adding change listener');
+                
+                emailProvider.addEventListener('change', function() {
+                    console.log('Provider changed to:', this.value);
+                    const serverSettings = document.getElementById('customServerSettings');
+                    const staticGmailSection = document.getElementById('static_gmail_connection_section');
+                    const tokenSection = document.querySelector('.token-input-section');
+                    
+                    if (this.value === 'imap' || this.value === 'smtp') {
+                        serverSettings.classList.remove('d-none');
+                        if (staticGmailSection) staticGmailSection.style.display = 'none';
+                        tokenSection.classList.remove('d-none');
+                    } else if (this.value === 'gmail') {
+                        serverSettings.classList.add('d-none');
+                        if (staticGmailSection) staticGmailSection.style.display = 'block';
+                        tokenSection.classList.add('d-none');
+                    } else {
+                        serverSettings.classList.add('d-none');
+                        if (staticGmailSection) staticGmailSection.style.display = 'none';
+                        tokenSection.classList.remove('d-none');
+                    }
+                });
+                
+                // Trigger change event to initialize UI
+                emailProvider.dispatchEvent(new Event('change'));
+            } else {
+                console.error('Email provider select not found!');
+            }
+        }
+        
+        // Add Gmail connection button functionality
+        const connectGmailBtn = document.getElementById('connect_gmail_btn');
+        console.log('Gmail connect button found:', connectGmailBtn);
+        if (connectGmailBtn) {
+            connectGmailBtn.addEventListener('click', function() {
+                console.log('Gmail connect button clicked');
+                const channelId = document.getElementById('channelManagementModal').getAttribute('data-current-channel-id');
+                console.log('Channel ID:', channelId);
+                if (channelId) {
+                    // Redirect to Gmail auth endpoint with the channel_id
+                    console.log('Redirecting to:', `/chat/google/auth/${channelId}/`);
+                    window.location.href = `/chat/google/auth/${channelId}/`;
                 } else {
+                    console.error('Channel ID not found');
+                    alert('Could not find channel ID. Please try again.');
+                }
+            });
+        } else {
+            console.error('Gmail connect button not found');
+        }
+        
+        // Add email provider change handler in channel management modal
+        const emailProviderSelect = document.getElementById('emailProvider');
+        if (emailProviderSelect) {
+            emailProviderSelect.addEventListener('change', function() {
+                const provider = this.value;
+                const gmailAuthSection = document.getElementById('gmail_auth_section');
+                const emailTokenSection = document.getElementById('email_token_section');
+                const serverSettings = document.querySelector('.server-settings');
+                
+                if (provider === 'gmail') {
+                    gmailAuthSection.classList.remove('d-none');
                     serverSettings.classList.add('d-none');
+                    
+                    // Check if there's an access token to determine if Gmail is connected
+                    const accessToken = document.getElementById('emailAccessToken').value;
+                    if (accessToken) {
+                        document.getElementById('gmail_not_connected').classList.add('d-none');
+                        document.getElementById('gmail_connected').classList.remove('d-none');
+                        emailTokenSection.classList.add('d-none');
+                    } else {
+                        document.getElementById('gmail_not_connected').classList.remove('d-none');
+                        document.getElementById('gmail_connected').classList.add('d-none');
+                        emailTokenSection.classList.remove('d-none');
+                    }
+                } else if (provider === 'imap' || provider === 'smtp') {
+                    gmailAuthSection.classList.add('d-none');
+                    serverSettings.classList.remove('d-none');
+                    emailTokenSection.classList.remove('d-none');
+                } else {
+                    gmailAuthSection.classList.add('d-none');
+                    serverSettings.classList.add('d-none');
+                    emailTokenSection.classList.remove('d-none');
+                }
+            });
+        }
+        
+        // Add reconnect Gmail button functionality
+        const reconnectGmailBtn = document.getElementById('reconnect_gmail_btn');
+        if (reconnectGmailBtn) {
+            reconnectGmailBtn.addEventListener('click', function() {
+                const channelId = document.getElementById('channelManagementModal').getAttribute('data-current-channel-id');
+                if (channelId) {
+                    // Redirect to Gmail auth endpoint with the channel_id
+                    window.location.href = `/chat/google/auth/${channelId}/`;
+                } else {
+                    alert('Could not find channel ID. Please try again.');
                 }
             });
         }

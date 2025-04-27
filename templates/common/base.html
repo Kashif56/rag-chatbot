@@ -42,7 +42,7 @@
                     <li class="nav-item">
                         <a class="nav-link" href="#testimonials">Testimonials</a>
                     </li>
-                    {% if request.user.isAnonymousUser %}
+                    {% if not request.user.is_authenticated %}
                     <li class="nav-item ms-lg-3">
                         <a class="btn btn-outline-primary nav-btn" href="#">Login</a>
                     </li>

@@ -87,6 +87,9 @@ class EmailChannel(models.Model):
     imap_server = models.CharField(max_length=255, blank=True, null=True)
     imap_port = models.CharField(max_length=255, blank=True, null=True)
     last_synced = models.DateTimeField(null=True, blank=True)
+    # Gmail API push notification fields
+    watch_expiration = models.DateTimeField(null=True, blank=True)
+    watch_history_id = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.email_address} - {self.provider}"
@@ -129,8 +132,9 @@ class Conversation(models.Model):
     chatbot = models.ForeignKey(Chatbot, on_delete=models.CASCADE)
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
 
-    from_number = models.CharField(max_length=255)
-  
+    from_number = models.CharField(max_length=255) # Identifier for SMS and WhatsApp
+    from_email = models.CharField(max_length=255) # Identifier for Email
+
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

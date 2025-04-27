@@ -399,14 +399,37 @@
                         <div class="mb-3">
                             <label for="emailProvider" class="form-label">Provider</label>
                             <select class="form-select" id="emailProvider" name="provider">
-                                <option value="gmail">Gmail</option>
+                                <option value="gmail" selected>Gmail</option>
                                 <option value="outlook">Outlook</option>
                                 <option value="imap">IMAP</option>
                                 <option value="smtp">SMTP Custom</option>
                             </select>
                         </div>
                         
-                        <div class="mb-3">
+                        <!-- Gmail Connection Section -->
+                        <div id="gmail_auth_section" class="mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <div id="gmail_not_connected">
+                                        <p class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i>Connect your Gmail account to enable email notifications.</p>
+                                        <button type="button" id="connect_gmail_btn" class="btn btn-primary btn-sm">
+                                            <i class="fab fa-google me-1"></i>Connect Gmail Account
+                                        </button>
+                                    </div>
+                                    <div id="gmail_connected">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fas fa-check-circle text-success me-2"></i>
+                                            <span>Gmail account connected</span>
+                                            <button type="button" class="btn btn-link btn-sm ms-auto" id="reconnect_gmail_btn">
+                                                Reconnect
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3" id="email_token_section">
                             <label for="emailAccessToken" class="form-label">Access Token</label>
                             <div class="input-group">
                                 <input type="password" class="form-control" id="emailAccessToken" name="access_token">
@@ -574,6 +597,18 @@
                     <form id="newChannelForm">
                         <!-- Dynamic form fields will be inserted here based on channel type -->
                     </form>
+                    
+                    <!-- Static Gmail Connection Section for New Channel -->
+                    <div id="static_gmail_connection_section" class="mb-3" style="display: none;">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <p class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i>Connect your Gmail account to enable email notifications.</p>
+                                <button type="button" id="static_connect_gmail_btn" class="btn btn-primary btn-sm">
+                                    <i class="fab fa-google me-1"></i>Connect Gmail Account
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -625,8 +660,6 @@
     });
     {% endfor %}
     
-    // Log channels data for debugging
-    console.log("Channels data loaded:", window.channelsData);
 </script>
 <script src="{% static 'js/chatbot_detail.js' %}"></script>
 <script>
@@ -650,11 +683,8 @@
                 delay: 7000, // Longer delay
                 animation: true 
             });
-            console.log('Toasts initialized with Bootstrap 5 method');
+          
         } catch (e) {
-            console.error('Could not initialize toasts with Bootstrap:', e);
-            
-            // Fallback: Create manual implementation
             successToast = {
                 show: function() {
                     successToastEl.classList.add('show');
@@ -672,52 +702,14 @@
                     }, 7000);
                 }
             };
-            console.log('Toasts initialized with fallback method');
         }
         
         // Make toasts globally accessible
         window.successToast = successToast;
         window.errorToast = errorToast;
         
-        // Test toasts on load (remove this in production)
-        // setTimeout(() => {
-        //    document.getElementById('successToastMessage').innerHTML = '<i class="fas fa-check-circle me-2"></i>Toast test successful!';
-        //    successToast.show();
-        // }, 1000);
-        
-        // Debug helper for toast testing
-        window.showToast = function(type, message) {
-            if (type === 'success') {
-                document.getElementById('successToastMessage').innerHTML = 
-                    `<i class="fas fa-check-circle me-2"></i>${message}`;
-                successToast.show();
-                console.log('Success toast shown:', message);
-            } else {
-                document.getElementById('errorToastMessage').innerHTML = 
-                    `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
-                errorToast.show();
-                console.log('Error toast shown:', message);
-            }
-        };
-        
-        // Test toast button
-        const testToastBtn = document.getElementById('testToastBtn');
-        if (testToastBtn) {
-            testToastBtn.addEventListener('click', function() {
-                window.showToast('success', 'Test toast message');
-                console.log('Test toast button clicked');
-            });
-            
-            // Expose method to show the test button in console
-            window.showTestButton = function() {
-                testToastBtn.style.display = 'block';
-                return 'Test button is now visible. Click it to test the toast functionality.';
-            };
-            
-            console.log('You can show the test toast button by running window.showTestButton() in the console');
-        }
-        
-        // Name editing (previously added code)
+     
+
         const nameDisplay = document.getElementById('chatbotNameDisplay');
         const nameInput = document.getElementById('chatbot_name');
         const editNameBtn = document.getElementById('editNameBtn');
@@ -935,6 +927,27 @@
                             document.getElementById('accessToken').value = channelData.access_token || '';
                             break;
                     }
+                }
+                
+                // Set up Gmail connect button event listener
+                const connectGmailBtn = document.getElementById('connect_gmail_btn');
+                if (connectGmailBtn) {
+                    console.log('Setting up Gmail connect button for channel ID:', channelId);
+                    // Remove any existing event listeners by cloning and replacing the button
+                    const newConnectBtn = connectGmailBtn.cloneNode(true);
+                    connectGmailBtn.parentNode.replaceChild(newConnectBtn, connectGmailBtn);
+                    
+                    newConnectBtn.addEventListener('click', function() {
+                        console.log('Gmail connect button clicked for channel ID:', channelId);
+                        if (channelId) {
+                            // Redirect to Gmail auth endpoint with the channel_id
+                            console.log('Redirecting to:', `/chat/google/auth/${channelId}/`);
+                            window.location.href = `/chat/google/auth/${channelId}/`;
+                        } else {
+                            console.error('Channel ID not found');
+                            alert('Could not find channel ID. Please try again.');
+                        }
+                    });
                 }
                 
                 // Show modal
@@ -1631,8 +1644,21 @@
             // Show/hide custom server settings for email
             if (channelType === 'email') {
                 document.getElementById('newEmailProvider').addEventListener('change', function() {
+                    const provider = this.value;
+                    console.log('Selected provider:', provider);
                     const serverSettings = document.getElementById('customServerSettings');
-                    if (this.value === 'imap' || this.value === 'smtp') {
+                    let gmailAuthSection = document.getElementById('gmail_auth_section');
+                    let emailTokenSection = document.getElementById('email_token_section');
+                    if (provider === 'gmail') {
+                        console.log('Gmail selected');
+                        gmailAuthSection.classList.remove('d-none');
+                        emailTokenSection.classList.add('d-none');
+                        console.log('Gmail Auth Section display:', gmailAuthSection.className);
+                        console.log("Email Token Section display:", emailTokenSection.className);
+                    } else {
+                        gmailAuthSection.classList.add('d-none');
+                    }
+                    if (provider === 'imap' || provider === 'smtp') {
                         serverSettings.classList.remove('d-none');
                     } else {
                         serverSettings.classList.add('d-none');

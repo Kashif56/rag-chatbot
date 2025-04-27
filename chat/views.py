@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from django.http import JsonResponse
+from django.shortcuts import render, redirect
+from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -9,6 +9,7 @@ import json
 from chat.models import Chatbot, Channel, EmailChannel, WhatsAppChannel, MessengerChannel, Message, Conversation
 from kb.models import KnowledgeBase, DataSource
 from django.db.utils import OperationalError
+from chat.google import get_authorization_url
 
 
 
@@ -631,6 +632,31 @@ def chat_api(request):
         return JsonResponse({'error': str(e)}, status=500)
 
 
-
-
-
+@login_required
+def gmail_auth(request, channel_id):
+    """Initiate the Gmail OAuth2 authentication flow."""
+    try:
+        # Get the channel
+        channel = Channel.objects.get(channel_id=channel_id)
+        
+        # Verify the channel belongs to the user
+        if channel.chatbot.user != request.user:
+            messages.error(request, "You don't have permission to access this channel.")
+            return redirect('dashboard:dashboard')
+        
+        # Generate the authorization URL
+        auth_url = get_authorization_url(request, channel_id)
+        
+        if not auth_url:
+            messages.error(request, "Failed to generate Gmail authorization URL.")
+            return redirect('dashboard:chatbot_detail', chatbot_id=channel.chatbot.chatbot_id)
+        
+        # Redirect to the Google authorization page
+        return redirect(auth_url)
+        
+    except Channel.DoesNotExist:
+        messages.error(request, "Channel not found.")
+        return redirect('dashboard:dashboard')
+    except Exception as e:
+        messages.error(request, f"Error initiating Gmail authentication: {str(e)}")
+        return redirect('dashboard:dashboard')
