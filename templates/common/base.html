@@ -44,10 +44,10 @@
                     </li>
                     {% if not request.user.is_authenticated %}
                     <li class="nav-item ms-lg-3">
-                        <a class="btn btn-outline-primary nav-btn" href="#">Login</a>
+                        <a class="btn btn-outline-primary nav-btn" href="{% url 'accounts:login' %}">Login</a>
                     </li>
                     <li class="nav-item ms-lg-2">
-                        <a class="btn btn-primary nav-btn" href="#">Sign Up</a>
+                        <a class="btn btn-primary nav-btn" href="{% url 'accounts:signup' %}">Sign Up</a>
                     </li>
                     {% else %}
                     <li class="nav-item ms-lg-3">
@@ -55,7 +55,7 @@
                          Dashboard</a>
                     </li>
                     <li class="nav-item ms-lg-3">
-                        <a class="btn btn-danger nav-btn" href="">Logout</a>
+                        <a class="btn btn-danger nav-btn" href="{% url 'accounts:logout' %}">Logout</a>
                     </li>
                     {% endif %}
                 </ul>

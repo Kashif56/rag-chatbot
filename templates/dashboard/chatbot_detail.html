@@ -51,7 +51,7 @@
             <!-- Left Column - Basic Information -->
             <div class="col-lg-5 mb-4">
                 <div class="card h-auto ultra-card">
-                    <div class="card-header bg-primary-gradient py-3">
+                    <div class="card-header bg-secondary-gradient py-3">
                         <h5 class="card-title mb-0 text-white d-flex align-items-center justify-content-between">
                             <span class="chatbot-name-display" id="chatbotNameDisplay">
                                 <i class="fas fa-robot me-2"></i>{{ chatbot.name }}
@@ -283,7 +283,7 @@
             <div class="col-lg-4">
                 <div class="fixed-chatbox-container">
                     <div class="card ultra-card h-auto">
-                        <div class="card-header bg-info-gradient text-white py-3">
+                        <div class="card-header bg-secondary-gradient text-white py-3">
                             <h5 class="card-title mb-0">Test Your Chatbot</h5>
                         </div>
                         <div class="card-body p-0">
@@ -429,20 +429,9 @@
                             </div>
                         </div>
                         
-                        <div class="mb-3" id="email_token_section">
-                            <label for="emailAccessToken" class="form-label">Access Token</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="emailAccessToken" name="access_token">
-                                <button class="btn btn-outline-secondary" type="button" id="toggleEmailKey">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="emailRefreshToken" class="form-label">Refresh Token</label>
-                            <input type="password" class="form-control" id="emailRefreshToken" name="refresh_token">
-                        </div>
+                        <!-- Hidden fields for tokens - not displayed to user -->
+                        <input type="hidden" id="emailAccessToken" name="access_token">
+                        <input type="hidden" id="emailRefreshToken" name="refresh_token">
                         
                         <div class="row server-settings">
                             <div class="col-md-6">
@@ -836,8 +825,38 @@
         });
         
         // Channel management
-        const channelManagementModal = new bootstrap.Modal(document.getElementById('channelManagementModal'));
-        const addChannelModal = new bootstrap.Modal(document.getElementById('addChannelModal'));
+        const channelManagementModalEl = document.getElementById('channelManagementModal');
+        const addChannelModalEl = document.getElementById('addChannelModal');
+        
+        const channelManagementModal = new bootstrap.Modal(channelManagementModalEl);
+        const addChannelModal = new bootstrap.Modal(addChannelModalEl);
+        
+        // Add event listeners to handle modal hidden events to ensure backdrop is removed
+        channelManagementModalEl.addEventListener('hidden.bs.modal', function () {
+            // Remove modal backdrop if it exists
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            // Remove modal-open class from body
+            document.body.classList.remove('modal-open');
+            // Remove inline styles from body
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        });
+        
+        addChannelModalEl.addEventListener('hidden.bs.modal', function () {
+            // Remove modal backdrop if it exists
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            // Remove modal-open class from body
+            document.body.classList.remove('modal-open');
+            // Remove inline styles from body
+            document.body.style.removeProperty('overflow');
+            document.body.style.removeProperty('padding-right');
+        });
         
         // All available channels from models.py CHANNEL_TYPE_CHOICES
         const allChannels = [
@@ -907,6 +926,23 @@
                                     serverSettings.classList.add('d-none');
                                 }
                             }
+                            
+                            // Handle Gmail connection status
+                            const gmailNotConnected = document.getElementById('gmail_not_connected');
+                            const gmailConnected = document.getElementById('gmail_connected');
+                            
+                            if (channelData.provider === 'gmail') {
+                                // Check if access token and refresh token exist
+                                if (channelData.access_token && channelData.refresh_token) {
+                                    // Google is connected
+                                    gmailNotConnected.classList.add('d-none');
+                                    gmailConnected.classList.remove('d-none');
+                                } else {
+                                    // Google is not connected
+                                    gmailNotConnected.classList.remove('d-none');
+                                    gmailConnected.classList.add('d-none');
+                                }
+                            }
                             break;
                             
                         case 'whatsapp':
@@ -929,8 +965,10 @@
                     }
                 }
                 
-                // Set up Gmail connect button event listener
+                // Set up Gmail connect and reconnect button event listeners
                 const connectGmailBtn = document.getElementById('connect_gmail_btn');
+                const reconnectGmailBtn = document.getElementById('reconnect_gmail_btn');
+                
                 if (connectGmailBtn) {
                     console.log('Setting up Gmail connect button for channel ID:', channelId);
                     // Remove any existing event listeners by cloning and replacing the button
@@ -950,6 +988,25 @@
                     });
                 }
                 
+                if (reconnectGmailBtn) {
+                    console.log('Setting up Gmail reconnect button for channel ID:', channelId);
+                    // Remove any existing event listeners by cloning and replacing the button
+                    const newReconnectBtn = reconnectGmailBtn.cloneNode(true);
+                    reconnectGmailBtn.parentNode.replaceChild(newReconnectBtn, reconnectGmailBtn);
+                    
+                    newReconnectBtn.addEventListener('click', function() {
+                        console.log('Gmail reconnect button clicked for channel ID:', channelId);
+                        if (channelId) {
+                            // Redirect to Gmail auth endpoint with the channel_id
+                            console.log('Redirecting to:', `/chat/google/auth/${channelId}/`);
+                            window.location.href = `/chat/google/auth/${channelId}/`;
+                        } else {
+                            console.error('Channel ID not found');
+                            alert('Could not find channel ID. Please try again.');
+                        }
+                    });
+                }
+                
                 // Show modal
                 channelManagementModal.show();
             });
@@ -958,11 +1015,18 @@
         // Handle email provider change
         document.getElementById('emailProvider')?.addEventListener('change', function() {
             const serverSettings = document.querySelector('.server-settings');
+            const gmailAuthSection = document.getElementById('gmail_auth_section');
+            
             if (serverSettings) {
                 if (this.value === 'imap' || this.value === 'smtp') {
                     serverSettings.classList.remove('d-none');
+                    gmailAuthSection.classList.add('d-none');
+                } else if (this.value === 'gmail') {
+                    serverSettings.classList.add('d-none');
+                    gmailAuthSection.classList.remove('d-none');
                 } else {
                     serverSettings.classList.add('d-none');
+                    gmailAuthSection.classList.add('d-none');
                 }
             }
         });
@@ -1324,8 +1388,15 @@
                     // Show success toast using the pre-initialized toast
                     successToast.show();
                     
-                    // Close modal
+                    // Close modal and ensure backdrop is removed
                     channelManagementModal.hide();
+                    const backdrop = document.querySelector('.modal-backdrop');
+                    if (backdrop) {
+                        backdrop.remove();
+                    }
+                    document.body.classList.remove('modal-open');
+                    document.body.style.removeProperty('overflow');
+                    document.body.style.removeProperty('padding-right');
                     
                     // Refresh the page to show updated data
                     setTimeout(() => {
@@ -1397,8 +1468,15 @@
                         // Show success toast
                         successToast.show();
                         
-                        // Close modal
+                        // Close modal and ensure backdrop is removed
                         channelManagementModal.hide();
+                        const backdrop = document.querySelector('.modal-backdrop');
+                        if (backdrop) {
+                            backdrop.remove();
+                        }
+                        document.body.classList.remove('modal-open');
+                        document.body.style.removeProperty('overflow');
+                        document.body.style.removeProperty('padding-right');
                         
                         // Refresh the page to update the UI
                         setTimeout(() => {
@@ -1467,11 +1545,6 @@
                 case 'email':
                     specificFields = `
                         <div class="mb-3">
-                            <label for="newEmailAddress" class="form-label">Email Address</label>
-                            <input type="email" class="form-control" id="newEmailAddress" name="email_address" placeholder="support@example.com" required>
-                        </div>
-                        
-                        <div class="mb-3">
                             <label for="newEmailProvider" class="form-label">Provider</label>
                             <select class="form-select" id="newEmailProvider" name="provider" required>
                                 <option value="gmail">Gmail</option>
@@ -1481,15 +1554,23 @@
                             </select>
                         </div>
                         
-                        <div class="mb-3">
-                            <label for="newEmailAccessToken" class="form-label">Access Token</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="newEmailAccessToken" name="access_token" required>
-                                <button class="btn btn-outline-secondary toggle-visibility" type="button">
-                                    <i class="fas fa-eye"></i>
-                                </button>
+                        <!-- Email address field (hidden for Gmail) -->
+                        <div class="mb-3" id="newEmailAddressContainer">
+                            <label for="newEmailAddress" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="newEmailAddress" name="email_address" placeholder="support@example.com">
+                        </div>
+                        
+                        <!-- Gmail Connection Section for New Channel -->
+                        <div id="new_gmail_auth_section" class="mb-3">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p class="mb-2"><i class="fas fa-info-circle text-primary me-2"></i>You'll need to connect your Gmail account after creating this channel. Your Gmail address will be automatically retrieved during authentication.</p>
+                                </div>
                             </div>
                         </div>
+                        
+                        <!-- Hidden fields for tokens - not displayed to user -->
+                        <input type="hidden" id="newEmailAccessToken" name="access_token">
                         
                         <div id="customServerSettings" class="d-none">
                             <div class="row">
@@ -1647,23 +1728,32 @@
                     const provider = this.value;
                     console.log('Selected provider:', provider);
                     const serverSettings = document.getElementById('customServerSettings');
-                    let gmailAuthSection = document.getElementById('gmail_auth_section');
-                    let emailTokenSection = document.getElementById('email_token_section');
+                    const newGmailAuthSection = document.getElementById('new_gmail_auth_section');
+                    const newEmailAddressContainer = document.getElementById('newEmailAddressContainer');
+                    const newEmailAddress = document.getElementById('newEmailAddress');
+                    
                     if (provider === 'gmail') {
-                        console.log('Gmail selected');
-                        gmailAuthSection.classList.remove('d-none');
-                        emailTokenSection.classList.add('d-none');
-                        console.log('Gmail Auth Section display:', gmailAuthSection.className);
-                        console.log("Email Token Section display:", emailTokenSection.className);
+                        // For Gmail, hide email address field (we'll get it from Google)
+                        newGmailAuthSection.classList.remove('d-none');
+                        newEmailAddressContainer.classList.add('d-none');
+                        newEmailAddress.removeAttribute('required');
                     } else {
-                        gmailAuthSection.classList.add('d-none');
+                        // For other providers, show email address field
+                        newGmailAuthSection.classList.add('d-none');
+                        newEmailAddressContainer.classList.remove('d-none');
+                        newEmailAddress.setAttribute('required', 'required');
                     }
+                    
+                    // Show server settings only for IMAP and SMTP
                     if (provider === 'imap' || provider === 'smtp') {
                         serverSettings.classList.remove('d-none');
                     } else {
                         serverSettings.classList.add('d-none');
                     }
                 });
+                
+                // Trigger change event to set initial state
+                document.getElementById('newEmailProvider').dispatchEvent(new Event('change'));
             }
         }
         

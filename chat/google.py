@@ -6,6 +6,9 @@ import time
 from datetime import datetime, timedelta
 from urllib.parse import urlencode
 import uuid
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Set this environment variable to allow OAuth over insecure transport (for development only)
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
@@ -42,18 +45,14 @@ SCOPES = [
 ]
 
 # Configuration - these should be moved to settings.py in production
-CLIENT_ID = '789110401170-l63q4kll8rfsnvbmfmjmnutl2pa11ogp.apps.googleusercontent.com'  # Replace with your OAuth client ID
-CLIENT_SECRET = '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'  # Replace with your OAuth client secret
-
-# For local development, use http://localhost:<port>/chat/google/oauth2callback/
-# For production, use your actual domain with https
-REDIRECT_URI = 'http://localhost:8000/chat/google/oauth2callback/'  # Update with your domain
+CLIENT_ID = os.getenv('CLIENT_ID')
+CLIENT_SECRET = os.getenv('CLIENT_SECRET')
+REDIRECT_URI = os.getenv('REDIRECT_URI') 
 
 # Pub/Sub configuration
-PUBSUB_TOPIC = 'gmail-notifications'
-PUBSUB_SUBSCRIPTION = 'gmail-chatbot-subscription'
-PUBSUB_SERVICE_ACCOUNT_FILE = SERVICE_ACCOUNT_FILE  # Path to your service account key file
-
+PUBSUB_TOPIC = os.getenv('PUBSUB_TOPIC')
+PUBSUB_SUBSCRIPTION = os.getenv('PUBSUB_SUBSCRIPTION')
+PUBSUB_SERVICE_ACCOUNT_FILE = SERVICE_ACCOUNT_FILE
 
 
 def get_authorization_url(request, channel_id):

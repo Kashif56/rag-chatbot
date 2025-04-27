@@ -67,44 +67,11 @@ def add_chatbot(request):
             llm_model=llm_model
         )
 
-        # Process channels
-        channels = data.get('channels', [])
-        
-        for channel_data in channels:
-            # Validate channel data
-            if 'type' not in channel_data:
-                continue
-                
-            channel = Channel.objects.create(
-                chatbot=chatbot,
-                channel_type=channel_data['type']
-            )
-            
-            if channel_data['type'] == 'email':
-                EmailChannel.objects.create(
-                    channel=channel,
-                    email_address=channel_data.get('email_address', None),
-                    provider=channel_data.get('provider', None),
-                    access_token=channel_data.get('access_token', None),
-                    refresh_token=channel_data.get('refresh_token', None),
-                    smtp_server=channel_data.get('smtp_server', None),
-                    smtp_port=channel_data.get('smtp_port', None),
-                    imap_server=channel_data.get('imap_server', None)
-                )
-            elif channel_data['type'] == 'whatsapp' or channel_data['type'] == 'sms':
-                WhatsAppChannel.objects.create(
-                    channel=channel,
-                    twilio_account_sid=channel_data.get('twilio_account_sid', ''),
-                    twilio_auth_token=channel_data.get('twilio_auth_token', ''),
-                    twilio_phone_number=channel_data.get('twilio_phone_number', '')
-                )
-            elif channel_data['type'] == 'messenger':
-                MessengerChannel.objects.create(
-                    channel=channel,
-                    page_id=channel_data.get('page_id', ''),
-                    page_name=channel_data.get('page_name', ''),
-                    access_token=channel_data.get('access_token', '')
-                )
+        # Create a default web channel
+        Channel.objects.create(
+            chatbot=chatbot,
+            channel_type='web'
+        )
 
         return JsonResponse({
             'success': True,

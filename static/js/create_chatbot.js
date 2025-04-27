@@ -6,9 +6,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form navigation
     setupFormNavigation();
     
-    // Channel checkbox handling
-    setupChannelCheckboxes();
-    
     // Form submission
     setupFormSubmission();
     
@@ -17,9 +14,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Setup LLM provider and model selection
     setupLLMSelection();
-    
-    // Setup Gmail connection button
-    setupGmailConnection();
 });
 
 function setupFormNavigation() {
@@ -105,64 +99,15 @@ function validateStep(step) {
             }
             return true;
             
-        case 3:
-            // At least one channel must be selected
-            const channels = document.querySelectorAll('.channel-checkbox:checked');
-            if (channels.length === 0) {
-                alert('Please select at least one channel.');
-                return false;
-            }
-            return true;
-            
         default:
             return true;
     }
 }
 
 function setupChannelCheckboxes() {
-    const channelCheckboxes = document.querySelectorAll('.channel-checkbox');
-    
-    channelCheckboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function() {
-            const channelType = this.value;
-            const configForm = document.getElementById(`${channelType}_config`);
-            
-            if (this.checked) {
-                configForm.classList.remove('d-none');
-            } else {
-                configForm.classList.add('d-none');
-            }
-            
-            // Special handling for WhatsApp and SMS since they share Twilio config
-            handleSharedTwilioConfig();
-        });
-    });
-}
-
-function handleSharedTwilioConfig() {
-    const whatsappEnabled = document.getElementById('channel_whatsapp').checked;
-    const smsEnabled = document.getElementById('channel_sms').checked;
-    
-    const whatsappSmsInfo = document.getElementById('whatsapp_sms_shared_info');
-    const smsWhatsappInfo = document.getElementById('sms_whatsapp_shared_info');
-    const whatsappFields = document.getElementById('whatsapp_twilio_fields');
-    const smsFields = document.getElementById('sms_twilio_fields');
-    
-    if (whatsappEnabled && smsEnabled) {
-        // Show message in SMS config that we're using WhatsApp's Twilio config
-        smsWhatsappInfo.classList.remove('d-none');
-        smsFields.classList.add('d-none');
-        
-        // Hide message in WhatsApp config
-        whatsappSmsInfo.classList.add('d-none');
-        whatsappFields.classList.remove('d-none');
-    } else {
-        // Reset to default views
-        smsWhatsappInfo.classList.add('d-none');
-        smsFields.classList.remove('d-none');
-        whatsappSmsInfo.classList.add('d-none');
-        whatsappFields.classList.remove('d-none');
-    }
+    // Channel checkboxes have been removed
+    // This function is kept as a placeholder for backward compatibility
+    console.log('Channel configuration has been moved to the chatbot detail page');
 }
 
 function populateReviewData() {
@@ -184,30 +129,11 @@ function populateReviewData() {
             'No custom prompt provided';
     }
     
-    // Channels
+    // Set default web channel in review
     const channelsContainer = document.getElementById('review-channels');
-    channelsContainer.innerHTML = '';
-    
-    document.querySelectorAll('.channel-checkbox:checked').forEach(channel => {
-        const channelType = channel.value;
-        const channelName = channel.nextElementSibling.querySelector('.channel-name').textContent;
-        
-        const channelDiv = document.createElement('div');
-        channelDiv.className = 'review-channel';
-        
-        let icon;
-        switch(channelType) {
-            case 'web': icon = 'bi-globe'; break;
-            case 'whatsapp': icon = 'bi-whatsapp'; break;
-            case 'messenger': icon = 'bi-messenger'; break;
-            case 'sms': icon = 'bi-chat-dots'; break;
-            case 'email': icon = 'bi-envelope'; break;
-            default: icon = 'bi-chat'; break;
-        }
-        
-        channelDiv.innerHTML = `<i class="bi ${icon}"></i> ${channelName}`;
-        channelsContainer.appendChild(channelDiv);
-    });
+    if (channelsContainer) {
+        channelsContainer.innerHTML = '<div class="review-channel"><i class="bi bi-globe"></i> Web Chat (Default)</div>';
+    }
 }
 
 function setupFormSubmission() {
@@ -273,86 +199,11 @@ function gatherFormData(formData) {
         prompt: formData.get('prompt'),
         llm_provider: formData.get('llm_provider'),
         llm_model: formData.get('llm_model'),
-        channels: []
+        // Add default web channel
+        channels: [{
+            type: 'web'
+        }]
     };
-    
-    // Get selected channels and their configs
-    const selectedChannels = document.querySelectorAll('.channel-checkbox:checked');
-    selectedChannels.forEach(channelCheckbox => {
-        const channelType = channelCheckbox.value;
-        let channelConfig = {
-            type: channelType
-        };
-        
-        // Add channel-specific configurations
-        switch(channelType) {
-            case 'whatsapp':
-                // Check if we should use SMS config instead (if both are enabled)
-                if (document.getElementById('channel_sms').checked) {
-                    channelConfig = {
-                        ...channelConfig,
-                        twilio_account_sid: formData.get('sms_twilio_account_sid'),
-                        twilio_auth_token: formData.get('sms_twilio_auth_token'),
-                        twilio_phone_number: formData.get('sms_twilio_phone_number')
-                    };
-                } else {
-                    channelConfig = {
-                        ...channelConfig,
-                        twilio_account_sid: formData.get('twilio_account_sid'),
-                        twilio_auth_token: formData.get('twilio_auth_token'),
-                        twilio_phone_number: formData.get('twilio_phone_number')
-                    };
-                }
-                break;
-            
-            case 'sms':
-                // Check if we should use WhatsApp config instead (if both are enabled)
-                if (document.getElementById('channel_whatsapp').checked) {
-                    channelConfig = {
-                        ...channelConfig,
-                        twilio_account_sid: formData.get('twilio_account_sid'),
-                        twilio_auth_token: formData.get('twilio_auth_token'),
-                        twilio_phone_number: formData.get('twilio_phone_number')
-                    };
-                } else {
-                    channelConfig = {
-                        ...channelConfig,
-                        twilio_account_sid: formData.get('sms_twilio_account_sid'),
-                        twilio_auth_token: formData.get('sms_twilio_auth_token'),
-                        twilio_phone_number: formData.get('sms_twilio_phone_number')
-                    };
-                }
-                break;
-            
-            case 'messenger':
-                channelConfig = {
-                    ...channelConfig,
-                    page_id: formData.get('page_id'),
-                    page_name: formData.get('page_name'),
-                    access_token: formData.get('messenger_access_token')
-                };
-                break;
-            
-            case 'email':
-                channelConfig = {
-                    ...channelConfig,
-                    email_address: formData.get('email_address'),
-                    provider: formData.get('email_provider'),
-                    access_token: formData.get('email_access_token'),
-                    refresh_token: '',  // Add if you have this field
-                    smtp_server: formData.get('smtp_server') || '',
-                    smtp_port: formData.get('smtp_port') || '',
-                    imap_server: formData.get('imap_server') || ''
-                };
-                break;
-            
-            case 'web':
-                // No additional config needed for web channel
-                break;
-        }
-        
-        chatbotData.channels.push(channelConfig);
-    });
     
     return chatbotData;
 }
@@ -435,92 +286,6 @@ function setupLLMSelection() {
 }
 
 function setupGmailConnection() {
-    // Get the email provider select element
-    const emailProviderSelect = document.getElementById('email_provider');
-    let gmailAuthSection = document.getElementById('gmail_auth_section');
-    const emailTokenSection = document.getElementById('email_token_section');
-    const connectGmailBtn = document.getElementById('connect_gmail_btn');
-    
-    // Check if we're on the edit page or create page
-    const isEditPage = window.location.pathname.includes('/chatbot/');
-    const isCreatePage = window.location.pathname.includes('/create-chatbot/');
-    
-    // Show/hide Gmail auth section based on provider selection
-    if (emailProviderSelect) {
-        emailProviderSelect.addEventListener('change', function() {
-            const provider = this.value;
-            
-            if (provider === 'gmail') {
-                // Show Gmail auth section and hide token input
-                gmailAuthSection.classList.remove('d-none');
-                emailTokenSection.classList.add('d-none');
-                console.log('Gmail Auth Section display:', gmailAuthSection.className);
-                console.log("Email Token Section display:", emailTokenSection.className);
-            } else {
-                // Hide Gmail auth section and show token input
-                gmailAuthSection.classList.add('d-none');
-                emailTokenSection.classList.remove('d-none');
-            }
-        });
-    }
-    
-    // Handle Gmail connect button click
-    if (connectGmailBtn) {
-        connectGmailBtn.addEventListener('click', function() {
-            // If we're on the create page, we need to save the chatbot first
-            if (isCreatePage) {
-                alert('Please save the chatbot first before connecting Gmail.');
-                return;
-            }
-            
-            // Get the chatbot_id from the URL
-            const urlParams = new URLSearchParams(window.location.search);
-            let chatbotId = urlParams.get('chatbot_id');
-            
-            // If no chatbot_id in URL, try to extract it from the pathname
-            if (!chatbotId) {
-                const pathParts = window.location.pathname.split('/');
-                for (const part of pathParts) {
-                    if (part.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-                        chatbotId = part;
-                        break;
-                    }
-                }
-            }
-            
-            if (!chatbotId) {
-                alert('Could not find chatbot ID. Please reload the page or try again.');
-                return;
-            }
-            
-            // We need to create the channel first to get a channel_id
-            // This will be a temporary channel that will be updated after OAuth
-            const formData = new FormData();
-            formData.append('channel_type', 'email');
-            formData.append('email_address', document.getElementById('email_address').value || '');
-            formData.append('email_provider', 'gmail');
-            
-            // Create a temporary channel to get a channel_id
-            fetch(`/chat/add-channel/${chatbotId}/`, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.channel_id) {
-                    // Redirect to Gmail auth endpoint with the channel_id
-                    window.location.href = `/chat/google/auth/${data.channel_id}/`;
-                } else {
-                    alert('Failed to create email channel. Please try again.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('An error occurred while connecting to Gmail. Please try again.');
-            });
-        });
-    }
+    // Gmail connection has been moved to the chatbot detail page
+    console.log('Gmail connection setup has been moved to the chatbot detail page');
 } 

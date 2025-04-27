@@ -73,14 +73,14 @@ class Channel(models.Model):
 class EmailChannel(models.Model):
     channel = models.OneToOneField(Channel, on_delete=models.CASCADE, related_name='email_config', null=True, blank=True)
 
-    email_address = models.EmailField()
+    email_address = models.EmailField(null=True, blank=True)
     provider = models.CharField(max_length=100, choices=[
         ("gmail", "Gmail"),
         ("outlook", "Outlook"),
         ("imap", "IMAP"),
         ("smtp", "SMTP Custom"),
     ])
-    access_token = models.TextField()
+    access_token = models.TextField(null=True, blank=True)
     refresh_token = models.TextField(blank=True, null=True)
     smtp_server = models.CharField(max_length=255, blank=True, null=True)
     smtp_port = models.CharField(max_length=255, blank=True, null=True)
