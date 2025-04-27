@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'chat',
     'accounts',
     'kb',
+    'analytics',
 ]
 
 MIDDLEWARE = [

@@ -1,0 +1,578 @@
+{% extends 'common/dashboard_base.html' %}
+{% load static %}
+
+{% block title %}Analytics Dashboard | NexusAI{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.css">
+<style>
+    .analytics-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        transition: transform 0.3s, box-shadow 0.3s;
+        overflow: hidden;
+        height: auto;
+    }
+    
+    .analytics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+    
+    .analytics-card .card-header {
+        border-bottom: none;
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, #6e8efb, #a777e3);
+        color: white;
+    }
+    
+    .analytics-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    .stat-card {
+        border-radius: 12px;
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .stat-card .stat-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 1rem;
+        opacity: 0.8;
+    }
+    
+    .stat-card.primary {
+        background: linear-gradient(135deg, #6e8efb, #4b6fef);
+        color: white;
+    }
+    
+    .stat-card.success {
+        background: linear-gradient(135deg, #2dcca7, #1ca38b);
+        color: white;
+    }
+    
+    .stat-card.warning {
+        background: linear-gradient(135deg, #ffc107, #f7a81b);
+        color: white;
+    }
+    
+    .stat-card.info {
+        background: linear-gradient(135deg, #17a2b8, #138496);
+        color: white;
+    }
+    
+    .filter-container {
+        background-color: #f8f9fa;
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    .chatbot-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .chatbot-item {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        transition: all 0.2s ease;
+        border-left: 4px solid transparent;
+    }
+    
+    .chatbot-item:hover {
+        background-color: #f8f9fa;
+        border-left-color: #6e8efb;
+    }
+    
+    .chatbot-item.active {
+        background-color: #e9ecef;
+        border-left-color: #4b6fef;
+    }
+    
+    .chatbot-item .chatbot-name {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .chatbot-item .chatbot-stats {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .time-period-selector .btn {
+        border-radius: 20px;
+        padding: 0.375rem 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h1 class="page-title">Analytics Dashboard</h1>
+            <p class="text-muted">Monitor performance and usage metrics across all chatbots</p>
+        </div>
+        <div class="col-md-6">
+            <div class="filter-container d-flex flex-wrap justify-content-md-end align-items-center">
+                <div class="time-period-selector btn-group me-3 mb-2 mb-md-0">
+                    <button type="button" class="btn btn-sm btn-primary active">Today</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary">Week</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary">Month</button>
+                    <button type="button" class="btn btn-sm btn-outline-primary">Year</button>
+                </div>
+                <div class="dropdown mb-2 mb-md-0">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-download me-1"></i> Export
+                    </button>
+                    <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                        <li><a class="dropdown-item" href="#"><i class="far fa-file-pdf me-2"></i>PDF Report</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="far fa-file-excel me-2"></i>Excel</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="far fa-file-csv me-2"></i>CSV</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Metrics Overview -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="stat-card primary">
+            <div class="stat-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <div class="stat-value">12,458</div>
+            <div class="stat-label">Total Messages</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card success">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-value">1,247</div>
+            <div class="stat-label">Unique Users</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-robot"></i>
+            </div>
+            <div class="stat-value">8</div>
+            <div class="stat-label">Active Chatbots</div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="stat-card info">
+            <div class="stat-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-value">2.4s</div>
+            <div class="stat-label">Avg. Response Time</div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Analytics Content -->
+<div class="row">
+    <!-- Left Column - Charts -->
+    <div class="col-lg-8 mb-4">
+        <!-- Message Volume Chart -->
+        <div class="card analytics-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Message Volume</h5>
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-light" id="refreshMessageVolumeChart">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="messageVolumeChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- User Engagement Chart -->
+        <div class="card analytics-card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">User Engagement</h5>
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-light" id="refreshUserEngagementChart">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="userEngagementChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Channel Distribution Chart -->
+        <div class="card analytics-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Channel Distribution</h5>
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-light" id="refreshChannelDistributionChart">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="chart-container">
+                            <canvas id="channelDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="mb-3">Channel Breakdown</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Channel</th>
+                                        <th>Messages</th>
+                                        <th>Users</th>
+                                        <th>Avg. Response</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><i class="fas fa-globe me-2 text-primary"></i>Web</td>
+                                        <td>5,842</td>
+                                        <td>723</td>
+                                        <td>1.8s</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fab fa-whatsapp me-2 text-success"></i>WhatsApp</td>
+                                        <td>4,127</td>
+                                        <td>312</td>
+                                        <td>2.5s</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fab fa-facebook-messenger me-2 text-info"></i>Messenger</td>
+                                        <td>1,984</td>
+                                        <td>156</td>
+                                        <td>2.2s</td>
+                                    </tr>
+                                    <tr>
+                                        <td><i class="fas fa-envelope me-2 text-warning"></i>Email</td>
+                                        <td>505</td>
+                                        <td>56</td>
+                                        <td>3.1s</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Right Column - Chatbot List and Performance -->
+    <div class="col-lg-4">
+        <!-- Chatbot Performance Card -->
+        <div class="card analytics-card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Chatbot Performance</h5>
+            </div>
+            <div class="card-body p-3">
+                <div class="chatbot-list">
+                    {% for i in "12345"|make_list %}
+                    <div class="chatbot-item {% if forloop.first %}active{% endif %}">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="chatbot-name">Customer Support Bot</div>
+                                <div class="chatbot-stats">
+                                    <span><i class="fas fa-comments me-1"></i>2,458 messages</span> • 
+                                    <span><i class="fas fa-users me-1"></i>342 users</span>
+                                </div>
+                            </div>
+                            <a href="{% url 'analytics:chatbot_analytics' chatbot_id=123 %}" class="btn btn-sm btn-outline-primary">Details</a>
+                        </div>
+                        <div class="progress mt-2" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: 85%;" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Activity Card -->
+        <div class="card analytics-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Recent Activity</h5>
+                <div class="card-actions">
+                    <button class="btn btn-sm btn-light" id="refreshRecentActivity">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item border-0 py-3">
+                        <div class="d-flex">
+                            <div class="activity-icon bg-primary text-white rounded-circle p-2 me-3">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div>
+                                <p class="mb-1">New user started conversation with <strong>Support Bot</strong></p>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i>5 minutes ago</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 py-3">
+                        <div class="d-flex">
+                            <div class="activity-icon bg-success text-white rounded-circle p-2 me-3">
+                                <i class="fas fa-check"></i>
+                            </div>
+                            <div>
+                                <p class="mb-1">Issue resolved by <strong>Technical Support Bot</strong></p>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i>22 minutes ago</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 py-3">
+                        <div class="d-flex">
+                            <div class="activity-icon bg-warning text-white rounded-circle p-2 me-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div>
+                                <p class="mb-1">High message volume detected on <strong>Sales Bot</strong></p>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i>1 hour ago</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="list-group-item border-0 py-3">
+                        <div class="d-flex">
+                            <div class="activity-icon bg-info text-white rounded-circle p-2 me-3">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div>
+                                <p class="mb-1"><strong>Product Bot</strong> knowledge base updated</p>
+                                <small class="text-muted"><i class="far fa-clock me-1"></i>3 hours ago</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script src="{% static 'js/analytics_dashboard.js' %}"></script>
+<!-- The following script is kept for reference but is no longer used -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Message Volume Chart
+        const messageVolumeCtx = document.getElementById('messageVolumeChart').getContext('2d');
+        const messageVolumeChart = new Chart(messageVolumeCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
+                datasets: [{
+                    label: 'Messages',
+                    data: [65, 59, 80, 81, 56, 55, 40, 120, 165, 210, 185, 95],
+                    backgroundColor: 'rgba(110, 142, 251, 0.1)',
+                    borderColor: 'rgba(110, 142, 251, 1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // User Engagement Chart
+        const userEngagementCtx = document.getElementById('userEngagementChart').getContext('2d');
+        const userEngagementChart = new Chart(userEngagementCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                datasets: [{
+                    label: 'Active Users',
+                    data: [120, 190, 230, 210, 250, 170, 130],
+                    backgroundColor: 'rgba(45, 204, 167, 0.7)',
+                    borderColor: 'rgba(45, 204, 167, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }, {
+                    label: 'New Users',
+                    data: [45, 80, 65, 70, 85, 60, 40],
+                    backgroundColor: 'rgba(110, 142, 251, 0.7)',
+                    borderColor: 'rgba(110, 142, 251, 1)',
+                    borderWidth: 1,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top'
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Channel Distribution Chart
+        const channelDistributionCtx = document.getElementById('channelDistributionChart').getContext('2d');
+        const channelDistributionChart = new Chart(channelDistributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Web', 'WhatsApp', 'Messenger', 'Email'],
+                datasets: [{
+                    data: [47, 33, 16, 4],
+                    backgroundColor: [
+                        'rgba(110, 142, 251, 0.8)',
+                        'rgba(45, 204, 167, 0.8)',
+                        'rgba(23, 162, 184, 0.8)',
+                        'rgba(255, 193, 7, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(110, 142, 251, 1)',
+                        'rgba(45, 204, 167, 1)',
+                        'rgba(23, 162, 184, 1)',
+                        'rgba(255, 193, 7, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right'
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+        
+        // Refresh button handlers
+        document.getElementById('refreshMessageVolumeChart').addEventListener('click', function() {
+            const newData = Array.from({length: 12}, () => Math.floor(Math.random() * 200) + 20);
+            messageVolumeChart.data.datasets[0].data = newData;
+            messageVolumeChart.update();
+        });
+        
+        document.getElementById('refreshUserEngagementChart').addEventListener('click', function() {
+            const newActiveUsers = Array.from({length: 7}, () => Math.floor(Math.random() * 200) + 100);
+            const newNewUsers = Array.from({length: 7}, () => Math.floor(Math.random() * 100) + 20);
+            userEngagementChart.data.datasets[0].data = newActiveUsers;
+            userEngagementChart.data.datasets[1].data = newNewUsers;
+            userEngagementChart.update();
+        });
+        
+        document.getElementById('refreshChannelDistributionChart').addEventListener('click', function() {
+            const newData = [
+                Math.floor(Math.random() * 50) + 30,
+                Math.floor(Math.random() * 40) + 20,
+                Math.floor(Math.random() * 30) + 10,
+                Math.floor(Math.random() * 10) + 1
+            ];
+            channelDistributionChart.data.datasets[0].data = newData;
+            channelDistributionChart.update();
+        });
+        
+        // Time period selector
+        document.querySelectorAll('.time-period-selector .btn').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.time-period-selector .btn').forEach(btn => {
+                    btn.classList.remove('btn-primary');
+                    btn.classList.add('btn-outline-primary');
+                });
+                this.classList.remove('btn-outline-primary');
+                this.classList.add('btn-primary');
+                
+                // Here you would fetch new data based on the selected time period
+                // For demo purposes, we'll just refresh the charts with random data
+                document.getElementById('refreshMessageVolumeChart').click();
+                document.getElementById('refreshUserEngagementChart').click();
+                document.getElementById('refreshChannelDistributionChart').click();
+            });
+        });
+    });
+</script>
+{% endblock %}
