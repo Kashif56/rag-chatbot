@@ -74,6 +74,7 @@ a:hover {
 }
 
 .text-gradient {
+    font-size: 1.2rem !important;
     background: var(--gradient-primary);
     -webkit-background-clip: text;
     background-clip: text;

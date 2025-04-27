@@ -17,8 +17,6 @@ def signup(request):
             return redirect(redirect_url)   
         
     if request.method == 'POST':
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
         username = request.POST.get('username')
         email = request.POST.get('email')
         password = request.POST.get('password')
@@ -34,14 +32,12 @@ def signup(request):
             
             user = User.objects.create_user(username=username, email=email, password=password)
             login(request, user)
-            user.first_name = first_name
-            user.last_name = last_name
             user.save()
             messages.success(request, 'Account was created successfully')
             if redirect_url:
                 return redirect(redirect_url)
             else:
-                return redirect('core:dashboard')
+                return redirect('chat:dashboard')
         else:
             messages.error(request, 'Passwords do not match')
             return redirect('accounts:signup')
@@ -69,7 +65,7 @@ def login_page(request):
             if redirect_url:
                 return redirect(redirect_url)
             else:
-                return redirect('core:dashboard')
+                return redirect('chat:dashboard')
         else:
             messages.error(request, 'Invalid username or password')
             return redirect('accounts:login')
@@ -79,9 +75,13 @@ def login_page(request):
 
 @login_required
 def logout_page(request):
+    redirect_url = request.GET.get('next')
     logout(request)
     messages.success(request, 'You have been logged out successfully')
-    return redirect('core:index')
+    if redirect_url:
+        return redirect(redirect_url)
+    else:
+        return redirect('core:index')
 
 
 
