@@ -272,30 +272,24 @@
                                         <th>Avg. Response</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="channelBreakdownTable">
                                     <tr>
-                                        <td><i class="fas fa-globe me-2 text-primary"></i>Web</td>
-                                        <td>5,842</td>
-                                        <td>723</td>
-                                        <td>1.8s</td>
+                                        <td><i class="fas fa-globe me-2 text-primary"></i>web</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>2.0s</td>
                                     </tr>
                                     <tr>
-                                        <td><i class="fab fa-whatsapp me-2 text-success"></i>WhatsApp</td>
-                                        <td>4,127</td>
-                                        <td>312</td>
-                                        <td>2.5s</td>
+                                        <td><i class="fab fa-whatsapp me-2 text-success"></i>web</td>
+                                        <td>0</td>
+                                        <td>0</td>
+                                        <td>2.0s</td>
                                     </tr>
                                     <tr>
-                                        <td><i class="fab fa-facebook-messenger me-2 text-info"></i>Messenger</td>
-                                        <td>1,984</td>
-                                        <td>156</td>
-                                        <td>2.2s</td>
-                                    </tr>
-                                    <tr>
-                                        <td><i class="fas fa-envelope me-2 text-warning"></i>Email</td>
-                                        <td>505</td>
-                                        <td>56</td>
-                                        <td>3.1s</td>
+                                        <td><i class="fas fa-envelope me-2 text-warning"></i>email</td>
+                                        <td>0</td>
+                                        <td>2</td>
+                                        <td>2.0s</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -335,244 +329,183 @@
                 </div>
             </div>
         </div>
-        
-        <!-- Recent Activity Card -->
-        <div class="card analytics-card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Recent Activity</h5>
-                <div class="card-actions">
-                    <button class="btn btn-sm btn-light" id="refreshRecentActivity">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush">
-                    <div class="list-group-item border-0 py-3">
-                        <div class="d-flex">
-                            <div class="activity-icon bg-primary text-white rounded-circle p-2 me-3">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div>
-                                <p class="mb-1">New user started conversation with <strong>Support Bot</strong></p>
-                                <small class="text-muted"><i class="far fa-clock me-1"></i>5 minutes ago</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item border-0 py-3">
-                        <div class="d-flex">
-                            <div class="activity-icon bg-success text-white rounded-circle p-2 me-3">
-                                <i class="fas fa-check"></i>
-                            </div>
-                            <div>
-                                <p class="mb-1">Issue resolved by <strong>Technical Support Bot</strong></p>
-                                <small class="text-muted"><i class="far fa-clock me-1"></i>22 minutes ago</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item border-0 py-3">
-                        <div class="d-flex">
-                            <div class="activity-icon bg-warning text-white rounded-circle p-2 me-3">
-                                <i class="fas fa-exclamation-triangle"></i>
-                            </div>
-                            <div>
-                                <p class="mb-1">High message volume detected on <strong>Sales Bot</strong></p>
-                                <small class="text-muted"><i class="far fa-clock me-1"></i>1 hour ago</small>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="list-group-item border-0 py-3">
-                        <div class="d-flex">
-                            <div class="activity-icon bg-info text-white rounded-circle p-2 me-3">
-                                <i class="fas fa-robot"></i>
-                            </div>
-                            <div>
-                                <p class="mb-1"><strong>Product Bot</strong> knowledge base updated</p>
-                                <small class="text-muted"><i class="far fa-clock me-1"></i>3 hours ago</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
-<script src="{% static 'js/analytics_dashboard.js' %}"></script>
-<!-- The following script is kept for reference but is no longer used -->
+<!-- Custom script to fix the avatar placeholder 404 error -->
 <script>
+    // Fix for missing avatar placeholder image
     document.addEventListener('DOMContentLoaded', function() {
-        // Message Volume Chart
-        const messageVolumeCtx = document.getElementById('messageVolumeChart').getContext('2d');
-        const messageVolumeChart = new Chart(messageVolumeCtx, {
-            type: 'line',
-            data: {
-                labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00', '22:00'],
-                datasets: [{
-                    label: 'Messages',
-                    data: [65, 59, 80, 81, 56, 55, 40, 120, 165, 210, 185, 95],
-                    backgroundColor: 'rgba(110, 142, 251, 0.1)',
-                    borderColor: 'rgba(110, 142, 251, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        display: false
-                    },
-                    tooltip: {
-                        mode: 'index',
-                        intersect: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
+        // Add a global error handler for images
+        document.querySelectorAll('img').forEach(img => {
+            img.addEventListener('error', function() {
+                // If the image is an avatar and fails to load, replace with a default
+                if (this.src.includes('avatar-placeholder.jpg')) {
+                    this.src = 'https://ui-avatars.com/api/?name=User&background=random';
                 }
-            }
-        });
-        
-        // User Engagement Chart
-        const userEngagementCtx = document.getElementById('userEngagementChart').getContext('2d');
-        const userEngagementChart = new Chart(userEngagementCtx, {
-            type: 'bar',
-            data: {
-                labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-                datasets: [{
-                    label: 'Active Users',
-                    data: [120, 190, 230, 210, 250, 170, 130],
-                    backgroundColor: 'rgba(45, 204, 167, 0.7)',
-                    borderColor: 'rgba(45, 204, 167, 1)',
-                    borderWidth: 1,
-                    borderRadius: 5
-                }, {
-                    label: 'New Users',
-                    data: [45, 80, 65, 70, 85, 60, 40],
-                    backgroundColor: 'rgba(110, 142, 251, 0.7)',
-                    borderColor: 'rgba(110, 142, 251, 1)',
-                    borderWidth: 1,
-                    borderRadius: 5
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'top'
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: {
-                            drawBorder: false
-                        }
-                    },
-                    x: {
-                        grid: {
-                            display: false
-                        }
-                    }
-                }
-            }
-        });
-        
-        // Channel Distribution Chart
-        const channelDistributionCtx = document.getElementById('channelDistributionChart').getContext('2d');
-        const channelDistributionChart = new Chart(channelDistributionCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Web', 'WhatsApp', 'Messenger', 'Email'],
-                datasets: [{
-                    data: [47, 33, 16, 4],
-                    backgroundColor: [
-                        'rgba(110, 142, 251, 0.8)',
-                        'rgba(45, 204, 167, 0.8)',
-                        'rgba(23, 162, 184, 0.8)',
-                        'rgba(255, 193, 7, 0.8)'
-                    ],
-                    borderColor: [
-                        'rgba(110, 142, 251, 1)',
-                        'rgba(45, 204, 167, 1)',
-                        'rgba(23, 162, 184, 1)',
-                        'rgba(255, 193, 7, 1)'
-                    ],
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right'
-                    }
-                },
-                cutout: '70%'
-            }
-        });
-        
-        // Refresh button handlers
-        document.getElementById('refreshMessageVolumeChart').addEventListener('click', function() {
-            const newData = Array.from({length: 12}, () => Math.floor(Math.random() * 200) + 20);
-            messageVolumeChart.data.datasets[0].data = newData;
-            messageVolumeChart.update();
-        });
-        
-        document.getElementById('refreshUserEngagementChart').addEventListener('click', function() {
-            const newActiveUsers = Array.from({length: 7}, () => Math.floor(Math.random() * 200) + 100);
-            const newNewUsers = Array.from({length: 7}, () => Math.floor(Math.random() * 100) + 20);
-            userEngagementChart.data.datasets[0].data = newActiveUsers;
-            userEngagementChart.data.datasets[1].data = newNewUsers;
-            userEngagementChart.update();
-        });
-        
-        document.getElementById('refreshChannelDistributionChart').addEventListener('click', function() {
-            const newData = [
-                Math.floor(Math.random() * 50) + 30,
-                Math.floor(Math.random() * 40) + 20,
-                Math.floor(Math.random() * 30) + 10,
-                Math.floor(Math.random() * 10) + 1
-            ];
-            channelDistributionChart.data.datasets[0].data = newData;
-            channelDistributionChart.update();
-        });
-        
-        // Time period selector
-        document.querySelectorAll('.time-period-selector .btn').forEach(button => {
-            button.addEventListener('click', function() {
-                document.querySelectorAll('.time-period-selector .btn').forEach(btn => {
-                    btn.classList.remove('btn-primary');
-                    btn.classList.add('btn-outline-primary');
-                });
-                this.classList.remove('btn-outline-primary');
-                this.classList.add('btn-primary');
-                
-                // Here you would fetch new data based on the selected time period
-                // For demo purposes, we'll just refresh the charts with random data
-                document.getElementById('refreshMessageVolumeChart').click();
-                document.getElementById('refreshUserEngagementChart').click();
-                document.getElementById('refreshChannelDistributionChart').click();
             });
         });
     });
 </script>
+
+<!-- Custom script for User Engagement chart to show dates instead of weekdays -->
+<script>
+    // Generate dates for the last 7 days
+    function generateLastSevenDays() {
+        const dates = [];
+        for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            dates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        }
+        return dates;
+    }
+    
+    // Override the default labels in the analytics_dashboard.js file
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wait for the external JS to initialize the charts
+        setTimeout(() => {
+            // Check if userEngagementChart exists in the window object (set by the external JS)
+            if (window.userEngagementChart) {
+                console.log('Updating User Engagement chart to show dates');
+                window.userEngagementChart.data.labels = generateLastSevenDays();
+                window.userEngagementChart.update();
+            }
+        }, 500);
+    });
+</script>
+
+<!-- Override the Channel Distribution data loading to fix the undefined issue -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wait for the external JS to initialize the charts
+        setTimeout(() => {
+            // Check if the external JS has loaded the chart
+            if (window.channelDistributionChart) {
+                console.log('Customizing Channel Distribution chart');
+                
+                // Custom function to load channel distribution data
+                function loadCustomChannelDistributionData(period = 'all') {
+                    console.log('Loading custom channel distribution data for period:', period);
+                    
+                    // Show loading state
+                    const tableBody = document.getElementById('channelBreakdownTable');
+                    if (tableBody) {
+                        tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Loading data...</td></tr>';
+                    }
+                    
+                    // Fetch updated channel data from the backend
+                    fetch(`/analytics/api/channel-distribution/?period=${period}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! Status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(data => {
+                            console.log('Channel distribution data received:', data);
+                            
+                            // Make sure we have the right data format
+                            if (!data.labels || !data.values || !data.channels) {
+                                console.error('Invalid data format received from server');
+                                return;
+                            }
+                            
+                            // Update chart with real data
+                            window.channelDistributionChart.data.labels = data.labels;
+                            window.channelDistributionChart.data.datasets[0].data = data.values;
+                            
+                            // Make sure the datasets array has the right length
+                            if (window.channelDistributionChart.data.datasets[0].backgroundColor.length < data.labels.length) {
+                                // Add more colors if needed
+                                while (window.channelDistributionChart.data.datasets[0].backgroundColor.length < data.labels.length) {
+                                    window.channelDistributionChart.data.datasets[0].backgroundColor.push(
+                                        `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 0.8)`
+                                    );
+                                    window.channelDistributionChart.data.datasets[0].borderColor.push(
+                                        `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`
+                                    );
+                                }
+                            }
+                            
+                            window.channelDistributionChart.update();
+                            
+                            // Update the channel breakdown table
+                            if (tableBody) {
+                                tableBody.innerHTML = '';
+                                
+                                if (data.channels.length === 0) {
+                                    tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No channel data available</td></tr>';
+                                    return;
+                                }
+                                
+                                data.channels.forEach(channel => {
+                                    const row = document.createElement('tr');
+                                    let iconClass = 'fas fa-globe text-primary';
+                                    
+                                    // Determine icon based on channel name
+                                    if (channel.name.toLowerCase() === 'email') {
+                                        iconClass = 'fas fa-envelope text-warning';
+                                    } else if (channel.name.toLowerCase() === 'whatsapp') {
+                                        iconClass = 'fab fa-whatsapp text-success';
+                                    } else if (channel.name.toLowerCase() === 'messenger') {
+                                        iconClass = 'fab fa-facebook-messenger text-info';
+                                    }
+                                    
+                                    row.innerHTML = `
+                                        <td><i class="${iconClass} me-2"></i>${channel.name}</td>
+                                        <td>${channel.messages}</td>
+                                        <td>${channel.users}</td>
+                                        <td>${channel.avg_response}</td>
+                                    `;
+                                    tableBody.appendChild(row);
+                                });
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error fetching channel data:', error);
+                            if (tableBody) {
+                                tableBody.innerHTML = 
+                                    '<tr><td colspan="4" class="text-center text-danger">Error loading data. Please try again.</td></tr>';
+                            }
+                        });
+                }
+                
+                // Override the refresh button handler
+                const refreshButton = document.getElementById('refreshChannelDistributionChart');
+                if (refreshButton) {
+                    // Remove existing event listeners
+                    const newRefreshButton = refreshButton.cloneNode(true);
+                    refreshButton.parentNode.replaceChild(newRefreshButton, refreshButton);
+                    
+                    // Add new event listener
+                    newRefreshButton.addEventListener('click', function() {
+                        const activePeriodBtn = document.querySelector('.time-period-selector .btn.btn-primary');
+                        const period = activePeriodBtn ? activePeriodBtn.textContent.toLowerCase() : 'all';
+                        loadCustomChannelDistributionData(period);
+                    });
+                }
+                
+                // Override the time period selector handlers for channel distribution
+                document.querySelectorAll('.time-period-selector .btn').forEach(button => {
+                    button.addEventListener('click', function() {
+                        const period = this.textContent.toLowerCase();
+                        // Call our custom function instead of the default one
+                        setTimeout(() => loadCustomChannelDistributionData(period), 100);
+                    }, true); // Use capture to ensure our handler runs after the default one
+                });
+                
+                // Load initial data
+                loadCustomChannelDistributionData();
+            }
+        }, 1000);
+    });
+</script>
+
+<!-- Keep the original analytics_dashboard.js file -->
+<script src="{% static 'js/analytics_dashboard.js' %}"></script>
 {% endblock %}

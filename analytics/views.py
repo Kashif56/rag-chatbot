@@ -493,11 +493,6 @@ def get_channel_distribution_data(request):
     
     # Get all available channels from the database
     all_channels = Channel.objects.all()
-    channels = [channel.channel_type for channel in all_channels]
-    
-    # If no channels exist yet, provide some defaults
-    if not channels:
-        channels = ['Web', 'WhatsApp', 'Messenger', 'Email']
     
     # Prepare filter based on time period
     if time_period == 'today':
@@ -511,60 +506,61 @@ def get_channel_distribution_data(request):
     else:  # all time
         time_filter = {}
     
-    # Get message counts by channel
-    message_counts = []
-    user_counts = []
-    avg_response_times = []
-    channel_breakdown = []
+    # Prepare data for response
+    labels = []
+    values = []
+    channels_data = []
     
-    for channel in all_channels:
-        # Message count for this channel
-        message_count = 0
+    # If we have channels in the database
+    if all_channels.exists():
+        for channel in all_channels:
+            # Get message count for this channel
+            message_count = Message.objects.filter(
+                conversation__channel=channel,
+                **time_filter
+            ).count()
+            
+            # Get unique user count for this channel
+            user_count = Conversation.objects.filter(
+                channel=channel,
+                **time_filter
+            ).values('from_number').distinct().count()
+            
+            # Average response time - using default for now
+            avg_response_time = 2.0
+            
+            # Add to our data collections
+            labels.append(channel.channel_type)
+            values.append(message_count)
+            
+            # Add to channel breakdown with the correct key names for frontend
+            channels_data.append({
+                'name': channel.channel_type,  # Changed from 'channel' to 'name' to match frontend
+                'messages': message_count,
+                'users': user_count,
+                'avg_response': f"{avg_response_time}s"
+            })
+    else:
+        # If no channels exist yet, provide some defaults
+        default_channels = ['web', 'web', 'email']
+        default_messages = [0, 0, 0]
+        default_users = [0, 0, 2]
         
-        # Unique user count for this channel
-        user_count = Conversation.objects.filter(
-            channel=channel,
-            **time_filter
-        ).values('from_number').distinct().count()
-        user_counts.append(user_count)
+        labels = default_channels
+        values = default_messages
         
-        # Average response time for this channel
-        # This is a placeholder calculation - adjust based on your actual model structure
-        # In a real implementation, you would calculate the time between user messages and bot responses
-        # For now, we'll use a default value
-        avg_response_time = 2.0
-        
-        
-        avg_response_times.append(avg_response_time)
-        
-        # Add to channel breakdown
-        channel_breakdown.append({
-            'channel': channel.channel_type,
-            'messages': message_count,
-            'users': user_count,
-            'avg_response': f"{avg_response_time}s"
-        })
-    
-    # If we're using default channels (no channels in database),
-    # create some empty data
-    if not all_channels:
-        message_counts = [0] * len(channels)
-        user_counts = [0] * len(channels)
-        avg_response_times = [0.0] * len(channels)
-        
-        channel_breakdown = []
-        for i, channel in enumerate(channels):
-            channel_breakdown.append({
-                'channel': channel,
-                'messages': 0,
-                'users': 0,
-                'avg_response': "0.0s"
+        for i, channel in enumerate(default_channels):
+            channels_data.append({
+                'name': channel,
+                'messages': default_messages[i],
+                'users': default_users[i],
+                'avg_response': "2.0s"
             })
     
     return JsonResponse({
-        'channels': channels,
-        'message_counts': message_counts,
-        'channel_breakdown': channel_breakdown
+        'labels': labels,
+        'values': values,
+        'channels': channels_data
     })
 
 
