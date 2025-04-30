@@ -29,18 +29,6 @@ def analytics_dashboard(request):
     
     return render(request, 'analytics/analytics_dashboard.html', context)
 
-
-def chatbot_analytics(request, chatbot_id):
-    # Get the chatbot or return 404 if not found
-    chatbot = get_object_or_404(Chatbot, id=chatbot_id)
-    
-    context = {
-        'chatbot': chatbot
-    }
-    
-    return render(request, 'analytics/chatbot_analytics.html', context)
-
-
 # API Endpoints for Analytics Dashboard KPIs
 
 def get_total_messages(request):
@@ -704,3 +692,4 @@ def get_recent_activity_data(request):
     return JsonResponse({
         'activities': activities
     })
+

@@ -6,7 +6,6 @@ app_name = 'analytics'
 urlpatterns = [
     # Dashboard pages
     path('', views.analytics_dashboard, name='analytics_dashboard'),
-    path('chatbot/<str:chatbot_id>/', views.chatbot_analytics, name='chatbot_analytics'),
     
     # API endpoints for KPIs
     path('api/total-messages/', views.get_total_messages, name='api_total_messages'),
@@ -19,7 +18,5 @@ urlpatterns = [
     path('api/user-engagement/', views.get_user_engagement_data, name='api_user_engagement'),
     path('api/channel-distribution/', views.get_channel_distribution_data, name='api_channel_distribution'),
     
-    # API endpoints for other dashboard components
-    path('api/chatbot-performance/', views.get_chatbot_performance_data, name='api_chatbot_performance'),
     path('api/recent-activity/', views.get_recent_activity_data, name='api_recent_activity'),
 ]
