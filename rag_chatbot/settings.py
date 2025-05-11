@@ -24,10 +24,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-sd_i-ioh!i4ozys@sro+!c2kiog#wb+1r3m06q161z3uee&8bi'
+SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-sd_i-ioh!i4ozys@sro+!c2kiog#wb+1r3m06q161z3uee&8bi')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
@@ -51,12 +51,14 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Add WhiteNoise for static files
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'accounts.middleware.EmailVerificationMiddleware',  # Add email verification middleware
 ]
 
 ROOT_URLCONF = 'rag_chatbot.urls'
@@ -81,6 +83,11 @@ WSGI_APPLICATION = 'rag_chatbot.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+# Use DATABASE_URL environment variable if available (Railway provides this)
+# Otherwise fall back to SQLite for local development
+import dj_database_url
+
 
 DATABASES = {
     'default': {
@@ -130,6 +137,9 @@ STATICFILES_DIRS = [
 ]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# Enable WhiteNoise for efficient static file serving in production
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Media files (User uploaded files)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
@@ -144,6 +154,42 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY')
 
 
+# Email Configuration
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@nexusai.com')
+
 # CSRF
 CSRF_ALLOW_ALL_ORIGINS = True
-CSRF_TRUSTED_ORIGINS = ['https://a204-223-123-91-112.ngrok-free.app']
+CSRF_TRUSTED_ORIGINS = [
+    'https://*.up.railway.app', 
+    'https://06db-223-123-97-192.ngrok-free.app',
+    'http://localhost:8000',
+    'http://127.0.0.1:8000'
+]
+
+# Add any custom domains here from RAILWAY_PUBLIC_DOMAIN if available
+RAILWAY_DOMAIN = os.getenv('RAILWAY_PUBLIC_DOMAIN')
+if RAILWAY_DOMAIN:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{RAILWAY_DOMAIN}')
+
+# Security settings for production
+# if not DEBUG:
+#     SECURE_SSL_REDIRECT = True
+#     SESSION_COOKIE_SECURE = True
+#     CSRF_COOKIE_SECURE = True
+#     SECURE_BROWSER_XSS_FILTER = True
+#     SECURE_CONTENT_TYPE_NOSNIFF = True
+#     SECURE_HSTS_SECONDS = 31536000  # 1 year
+#     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+#     SECURE_HSTS_PRELOAD = True
+
+# Disable HTTPS requirements for development
+SECURE_PROXY_SSL_HEADER = None
+SECURE_SSL_REDIRECT = False
+SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = False

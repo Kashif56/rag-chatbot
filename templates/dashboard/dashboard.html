@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="dashboard-header">
+    {% if chatbots %}
     <div class="row align-items-center mb-4">
         <div class="col-md-6">
             <h1 class="page-title">My Chatbots</h1>
@@ -15,6 +16,8 @@
             </a>
         </div>
     </div>
+   
+    {% endif %}
 
     <!-- <div class="chatbot-filters mb-4">
         <div class="row g-2">
@@ -43,6 +46,7 @@
 
 
 <div class="chatbot-grid">
+    {% if chatbots %}
     <div class="row">
         {% for chatbot in chatbots %}
         <div class="col-md-6 col-lg-4 mb-4">
@@ -103,6 +107,71 @@
         </div>
         {% endfor %}
     </div>
+    {% else %}
+    <!-- Guide for new users when they don't have any chatbots -->
+    <div class="getting-started-guide">
+        <div class="card mb-4">
+            <div class="card-body text-center p-5">
+                <div class="empty-state-icon mb-4">
+                    <i class="fas fa-robot fa-4x text-primary"></i>
+                </div>
+                <h3 class="mb-3">Welcome to NexusAI!</h3>
+                <p class="lead mb-4">You haven't created any chatbots yet. Let's get started!</p>
+                <a href="{% url 'chat:create_chatbot_page' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus me-2"></i>Create Your First Chatbot
+                </a>
+            </div>
+        </div>
+
+        <div class="row mt-5">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="guide-icon mb-3">
+                            <i class="fas fa-magic fa-2x text-primary"></i>
+                        </div>
+                        <h4>1. Create a Chatbot</h4>
+                        <p>Start by creating your first AI chatbot. Give it a name, description, and customize its behavior.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="guide-icon mb-3">
+                            <i class="fas fa-book fa-2x text-primary"></i>
+                        </div>
+                        <h4>2. Add Knowledge</h4>
+                        <p>Upload documents, websites, or add text to build your chatbot's knowledge base.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="guide-icon mb-3">
+                            <i class="fas fa-plug fa-2x text-primary"></i>
+                        </div>
+                        <h4>3. Connect Channels</h4>
+                        <p>Connect your chatbot to channels like web, WhatsApp, or email to interact with users.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-body p-4">
+                <h4><i class="fas fa-lightbulb me-2 text-warning"></i>Tips for Success</h4>
+                <ul class="list-group list-group-flush mt-3">
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle me-2 text-success"></i>Use high-quality documents for better answers</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle me-2 text-success"></i>Test your chatbot regularly to ensure it's providing accurate information</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle me-2 text-success"></i>Monitor analytics to understand user interactions and improve your chatbot</li>
+                    <li class="list-group-item bg-transparent"><i class="fas fa-check-circle me-2 text-success"></i>Update your knowledge base periodically to keep information current</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 {% endblock %} 
