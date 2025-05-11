@@ -8,6 +8,8 @@ app_name = 'chat'
 
 urlpatterns = [
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('conversations/', views.conversations, name='conversations'),
+    path('conversation/<uuid:conversation_id>/', views.conversation_detail, name='conversation_detail'),
     path('create-chatbot/', views.create_chatbot_page, name='create_chatbot_page'),
     path('add-chatbot/', views.add_chatbot, name='add_chatbot'),
     path('chatbot/<str:chatbot_id>/', views.edit_chatbot_page, name='edit_chatbot_page'),

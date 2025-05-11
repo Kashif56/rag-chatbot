@@ -35,20 +35,7 @@
                 </div>
                 
                 <div class="ms-auto d-flex align-items-center">
-                    <div class="dropdown me-3">
-                        <button class="btn notification-btn" type="button" id="notificationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-bell"></i>
-                            <span class="notification-badge">3</span>
-                        </button>
-                        <ul class="dropdown-menu dropdown-menu-end notification-dropdown" aria-labelledby="notificationDropdown">
-                            <li><h6 class="dropdown-header">Notifications</h6></li>
-                            <li><a class="dropdown-item" href="#">New user interaction</a></li>
-                            <li><a class="dropdown-item" href="#">System update completed</a></li>
-                            <li><a class="dropdown-item" href="#">Weekly report available</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item text-center" href="#">View all notifications</a></li>
-                        </ul>
-                    </div>
+     
                     
                     <div class="dropdown">
                         <button class="btn user-profile-btn" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -85,21 +72,17 @@
                     <li class="nav-item">
                         <a class="nav-link active" href="{% url 'chat:dashboard' %}"><i class="fas fa-tachometer-alt me-2"></i><span class="nav-text">Dashboard</span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'chat:create_chatbot_page' %}"><i class="fas fa-robot me-2"></i><span class="nav-text">Create Chatbot</span></a>
-                    </li>
+             
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'kb:knowledge_base' %}"><i class="fas fa-book me-2"></i><span class="nav-text">Knowledge Base</span></a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-comments me-2"></i><span class="nav-text">Conversations</span></a>
+                        <a class="nav-link" href="{% url 'chat:conversations' %}"><i class="fas fa-comments me-2"></i><span class="nav-text">Conversations</span></a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'analytics:analytics_dashboard' %}"><i class="fas fa-chart-line me-2"></i><span class="nav-text">Analytics</span></a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#"><i class="fas fa-plug me-2"></i><span class="nav-text">Integrations</span></a>
-                    </li>
+                   
                     <li class="nav-item">
                         <a class="nav-link" href="#"><i class="fas fa-cog me-2"></i><span class="nav-text">Settings</span></a>
                     </li>

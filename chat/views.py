@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -16,16 +16,41 @@ from chat.google import get_authorization_url
 @login_required
 def dashboard(request):
     chatbots = Chatbot.objects.filter(user=request.user)
-    channels = Channel.objects.filter(chatbot__in=chatbots)
     
     conversations = Conversation.objects.filter(chatbot__in=chatbots)
 
     context = {
         'chatbots': chatbots,
-        'channels': channels,
         'conversations': conversations
     }
     return render(request, 'dashboard/dashboard.html', context)
+
+
+@login_required
+def conversations(request):
+    """View to list all conversations for the user's chatbots."""
+    chatbots = Chatbot.objects.filter(user=request.user)
+    conversations = Conversation.objects.filter(chatbot__in=chatbots).order_by('-updated_at')
+    
+    context = {
+        'chatbots': chatbots,
+        'conversations': conversations
+    }
+    return render(request, 'dashboard/conversations.html', context)
+
+
+@login_required
+def conversation_detail(request, conversation_id):
+    """View to display details of a specific conversation."""
+    chatbots = Chatbot.objects.filter(user=request.user)
+    conversation = get_object_or_404(Conversation, conversation_id=conversation_id, chatbot__in=chatbots)
+    messages = Message.objects.filter(conversation=conversation).order_by('created_at')
+    
+    context = {
+        'conversation': conversation,
+        'messages': messages
+    }
+    return render(request, 'dashboard/conversation_detail.html', context)
 
 
 

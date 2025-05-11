@@ -53,6 +53,10 @@ class Chatbot(models.Model):
         for chat in conversation:
             messages += chat.messages.count()
         return messages
+    
+
+    def get_channels(self):
+        return Channel.objects.filter(chatbot=self)
 
 
 # ---------- Channel (Base) ----------
