@@ -398,16 +398,16 @@ def add_channel(request, chatbot_id):
         
         # Create channel-specific record
         if channel_type_lower == 'email':
-            if not email_address or not provider:
+            if not provider:
                 channel.delete()  # Clean up the channel if data is incomplete
                 return JsonResponse({
                     'success': False,
-                    'error': 'Email address and provider are required for Email channel'
+                    'error': 'Provider is required for Email channel'
                 }, status=400)
                 
             EmailChannel.objects.create(
                 channel=channel,
-                email_address=email_address,
+                email_address=email_address or '',
                 provider=provider,
                 access_token=access_token or '',
                 refresh_token=refresh_token or '',
