@@ -274,13 +274,34 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="settings-group">
+                            <div class="card mb-4 ultra-card">
+                                <div class="card-header bg-primary-gradient py-3">
+                                    <h5 class="card-title mb-0 text-white">
+                                        <i class="fas fa-globe me-2"></i>Web Chatbot URL
+                                    </h5>
+                                </div>
+                                <div class="card-body p-4">
+                                    <p class="mb-2">Your chatbot is available at the following URL:</p>
+                                    <div class="d-grid gap-2">
+                                        <a href="/chat/chat/{{ chatbot.chatbot_id }}/" target="_blank" class="btn btn-primary">
+                                            <i class="fas fa-external-link-alt me-2"></i>Open Web Chat
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                 
                     </div>
                 </div>
             </div>
             
-            <!-- Right Column: Test Chatbox -->
+            <!-- Right Column: Web Chatbot URL & Test Chatbox -->
             <div class="col-lg-4">
+        
+                
+                <!-- Test Chatbox -->
                 <div class="fixed-chatbox-container">
                     <div class="card ultra-card h-auto">
                         <div class="card-header bg-secondary-gradient text-white py-3">
@@ -653,6 +674,33 @@
 <script src="{% static 'js/chatbot_detail.js' %}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Web Chatbot URL copy button functionality
+        const copyWebchatUrlBtn = document.getElementById('copyWebchatUrl');
+        if (copyWebchatUrlBtn) {
+            copyWebchatUrlBtn.addEventListener('click', function() {
+                const webchatUrlInput = document.getElementById('webchatUrl');
+                webchatUrlInput.select();
+                document.execCommand('copy');
+                
+                // Change button text temporarily to show success
+                const originalHTML = copyWebchatUrlBtn.innerHTML;
+                copyWebchatUrlBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyWebchatUrlBtn.classList.remove('btn-outline-primary');
+                copyWebchatUrlBtn.classList.add('btn-success');
+                
+                setTimeout(function() {
+                    copyWebchatUrlBtn.innerHTML = originalHTML;
+                    copyWebchatUrlBtn.classList.remove('btn-success');
+                    copyWebchatUrlBtn.classList.add('btn-outline-primary');
+                }, 2000);
+                
+                // Show success toast
+                document.getElementById('successToastMessage').innerHTML = 
+                    '<i class="fas fa-check-circle me-2"></i>Web chatbot URL copied to clipboard!';
+                successToast.show();
+            });
+        }
+        
         // Initialize all toasts - multiple approaches for compatibility
         const successToastEl = document.getElementById('successToast');
         const errorToastEl = document.getElementById('errorToast');

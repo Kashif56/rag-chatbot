@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.models import User
-from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth import login, logout, authenticate, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.utils.decorators import method_decorator
@@ -192,3 +192,86 @@ class EmailVerificationRequiredMixin:
             messages.error(request, 'Please verify your email to access this page.')
             return redirect('accounts:verify_email')
         return super().dispatch(request, *args, **kwargs)
+
+
+@login_required
+def profile_view(request):
+    """View for user profile page"""
+    # Only show profile to verified users
+    if not request.user.profile.is_email_verified:
+        messages.error(request, 'Please verify your email to access your profile.')
+        return redirect('accounts:verify_email')
+    
+    return render(request, 'accounts/profile.html')
+
+
+@login_required
+def update_username(request):
+    """Update user's username"""
+    # Only allow verified users to update username
+    if not request.user.profile.is_email_verified:
+        messages.error(request, 'Please verify your email before updating your username.')
+        return redirect('accounts:verify_email')
+    
+    if request.method == 'POST':
+        new_username = request.POST.get('new_username')
+        
+        # Check if username is valid
+        if not new_username:
+            messages.error(request, 'Username cannot be empty.')
+            return redirect('accounts:profile')
+        
+        # Check if username is already taken
+        if User.objects.filter(username=new_username).exists() and new_username != request.user.username:
+            messages.error(request, 'Username is already taken.')
+            return redirect('accounts:profile')
+        
+        # Update username
+        request.user.username = new_username
+        request.user.save()
+        
+        messages.success(request, 'Username updated successfully.')
+        return redirect('accounts:profile')
+    
+    return redirect('accounts:profile')
+
+
+@login_required
+def update_password(request):
+    """Update user's password"""
+    # Only allow verified users to update password
+    if not request.user.profile.is_email_verified:
+        messages.error(request, 'Please verify your email before changing your password.')
+        return redirect('accounts:verify_email')
+    
+    if request.method == 'POST':
+        current_password = request.POST.get('current_password')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        
+        # Check if current password is correct
+        if not request.user.check_password(current_password):
+            messages.error(request, 'Current password is incorrect.')
+            return redirect('accounts:profile')
+        
+        # Check if new passwords match
+        if new_password != confirm_password:
+            messages.error(request, 'New passwords do not match.')
+            return redirect('accounts:profile')
+        
+        # Check password strength (basic validation)
+        if len(new_password) < 8:
+            messages.error(request, 'Password must be at least 8 characters long.')
+            return redirect('accounts:profile')
+        
+        # Update password
+        request.user.set_password(new_password)
+        request.user.save()
+        
+        # Update session to prevent logout
+        update_session_auth_hash(request, request.user)
+        
+        messages.success(request, 'Password changed successfully.')
+        return redirect('accounts:profile')
+    
+    return redirect('accounts:profile')

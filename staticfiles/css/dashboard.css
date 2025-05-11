@@ -1,0 +1,747 @@
+/* Dashboard Styles
+------------------------------------------ */
+:root {
+    --primary-color: #4f46e5;
+    --primary-light: #6366f1;
+    --primary-dark: #4338ca;
+    --secondary-color: #64748b;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #06b6d4;
+    --purple-color: #8b5cf6;
+    --orange-color: #f97316;
+    --green-color: #22c55e;
+    --red-color: #ef4444;
+    --light-bg: #f9fafb;
+    --dark-bg: #111827;
+    --card-bg: #ffffff;
+    --border-color: #e5e7eb;
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #6b7280;
+    --sidebar-width: 260px;
+    --sidebar-collapsed-width: 70px;
+    --topbar-height: 70px;
+    --border-radius: 0.5rem;
+    --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --transition-speed: 0.3s;
+}
+
+/* Base Styles */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--light-bg);
+    color: var(--text-primary);
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    font-size: 0.9rem;
+}
+
+a {
+    text-decoration: none;
+    color: var(--primary-color);
+    transition: all var(--transition-speed) ease;
+}
+
+a:hover {
+    color: var(--primary-dark);
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+}
+
+/* Top Navbar */
+#dashboardNav {
+    height: var(--topbar-height);
+    background-color: var(--card-bg);
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    padding: 0 1.5rem;
+    z-index: 1030;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#dashboardNav .navbar-brand {
+    display: flex;
+    align-items: center;
+}
+
+.logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    letter-spacing: 0.5px;
+    color: var(--text-primary);
+}
+
+/* Sidebar Toggle Button */
+.sidebar-toggle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--light-bg);
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-speed) ease;
+}
+
+.sidebar-toggle:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Notification Button */
+.notification-btn {
+    position: relative;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--light-bg);
+    border: none;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-speed) ease;
+}
+
+.notification-btn:hover {
+    background-color: var(--primary-light);
+    color: white;
+}
+
+.notification-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 0.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.notification-dropdown {
+    width: 300px;
+    padding: 0;
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.notification-dropdown .dropdown-header {
+    background-color: var(--light-bg);
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+}
+
+.notification-dropdown .dropdown-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.notification-dropdown .dropdown-item:last-child {
+    border-bottom: none;
+}
+
+/* User Profile Button */
+.user-profile-btn {
+    display: flex;
+    align-items: center;
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    padding: 0.5rem;
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed) ease;
+}
+
+.user-profile-btn:hover {
+    background-color: var(--light-bg);
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--card-bg);
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1020;
+    box-shadow: 1px 0 10px rgba(0, 0, 0, 0.05);
+    transition: all var(--transition-speed) ease;
+    display: flex;
+    flex-direction: column;
+    padding-top: calc(var(--topbar-height) + 20px);
+}
+
+.sidebar.collapsed {
+    width: var(--sidebar-collapsed-width);
+}
+
+.sidebar-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-header h6 {
+    font-size: 0.85rem;
+}
+
+.sidebar-header small {
+    font-size: 0.75rem;
+}
+
+.sidebar-menu {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem 0;
+}
+
+.sidebar-menu .nav-item {
+    margin: 0.25rem 0;
+}
+
+.sidebar-menu .nav-link {
+    color: var(--text-secondary);
+    padding: 0.65rem 1.25rem;
+    font-size: 0.85rem;
+    border-radius: 0.25rem;
+    transition: all var(--transition-speed) ease;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-menu .nav-link:hover {
+    background-color: var(--light-bg);
+    color: var(--primary-color);
+}
+
+.sidebar-menu .nav-link.active {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.sidebar-menu .nav-link i {
+    font-size: 1.1rem;
+    width: 1.5rem;
+    text-align: center;
+}
+
+.sidebar-footer {
+    padding: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.btn-logout {
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background-color: transparent;
+    transition: all var(--transition-speed) ease;
+}
+
+.btn-logout:hover {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+
+/* When sidebar is collapsed */
+.sidebar.collapsed .user-info,
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .logout-text {
+    display: none;
+}
+
+.sidebar.collapsed .avatar {
+    margin: 0 auto;
+}
+
+.sidebar.collapsed .sidebar-header {
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+.sidebar.collapsed .nav-link {
+    padding: 0.75rem 0;
+    justify-content: center;
+}
+
+.sidebar.collapsed .nav-link i {
+    margin-right: 0 !important;
+}
+
+.sidebar.collapsed .btn-logout {
+    justify-content: center;
+    padding: 0.5rem;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding-top: var(--topbar-height);
+    transition: all var(--transition-speed) ease;
+    min-height: 100vh;
+}
+
+.main-content.expanded {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* Dashboard Header */
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.page-title {
+    font-weight: 600;
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.btn-create {
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+}
+
+/* Stat Cards */
+.stat-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    height: 100%;
+    transition: all var(--transition-speed) ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.stat-card-body {
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.stat-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-right: 1rem;
+}
+
+.bg-primary-soft {
+    background-color: rgba(79, 70, 229, 0.1);
+    color: var(--primary-color);
+}
+
+.bg-success-soft {
+    background-color: rgba(16, 185, 129, 0.1);
+    color: var(--success-color);
+}
+
+.bg-warning-soft {
+    background-color: rgba(245, 158, 11, 0.1);
+    color: var(--warning-color);
+}
+
+.bg-info-soft {
+    background-color: rgba(6, 182, 212, 0.1);
+    color: var(--info-color);
+}
+
+.stat-card-info {
+    flex: 1;
+}
+
+.stat-card-title {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.stat-card-value {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-primary);
+}
+
+/* Chatbot Filters */
+.chatbot-filters {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--card-shadow);
+}
+
+.filter-buttons .btn {
+    padding: 0.375rem 1rem;
+}
+
+/* Chatbot Cards */
+.chatbot-card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-shadow);
+    overflow: hidden;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: all var(--transition-speed) ease;
+    border: 1px solid var(--border-color);
+}
+
+.chatbot-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.chatbot-card-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.chatbot-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+}
+
+.bg-purple {
+    background-color: var(--purple-color);
+}
+
+.bg-orange {
+    background-color: var(--orange-color);
+}
+
+.bg-green {
+    background-color: var(--green-color);
+}
+
+.bg-red {
+    background-color: var(--red-color);
+}
+
+.chatbot-name {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.btn-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    border: none;
+    background-color: transparent;
+    transition: all var(--transition-speed) ease;
+}
+
+.btn-icon:hover {
+    background-color: var(--light-bg);
+    color: var(--text-primary);
+}
+
+.chatbot-card-body {
+    padding: 1.25rem;
+    flex: 1;
+}
+
+.chatbot-description {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.chatbot-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.chatbot-meta-item {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+}
+
+.chatbot-card-footer {
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.channels {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.channel-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: var(--light-bg);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+    transition: all var(--transition-speed) ease;
+}
+
+.channel-icon:hover {
+    background-color: var(--primary-light);
+    color: white;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.action-buttons .btn {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.7rem;
+}
+
+/* Add New Chatbot Card */
+.chatbot-card-add {
+    border: 2px dashed var(--border-color);
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+.chatbot-card-add:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(79, 70, 229, 0.05);
+}
+
+.add-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--light-bg);
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    transition: all var(--transition-speed) ease;
+}
+
+.chatbot-card-add:hover .add-icon {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Pagination */
+.pagination-container {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    box-shadow: var(--card-shadow);
+}
+
+.showing-entries {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.pagination {
+    margin-bottom: 0;
+}
+
+.pagination .page-link {
+    color: var(--primary-color);
+    border: none;
+    padding: 0.375rem 0.75rem;
+    margin: 0 0.25rem;
+    border-radius: 0.25rem;
+    transition: all var(--transition-speed) ease;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.show {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+    }
+    
+    .chatbot-filters .btn-group {
+        margin-top: 0.5rem;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .avatar {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .chatbot-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .dropdown {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+    }
+    
+    .chatbot-card-footer {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .channels, .action-buttons {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .pagination-container {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+}
+
+/* Card Title */
+.card-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+}
+
+/* Form elements */
+.form-control {
+    font-size: 0.85rem;
+}
+
+.form-text, .form-label {
+    font-size: 0.8rem;
+}
+
+/* Dropdown menus */
+.dropdown-menu {
+    font-size: 0.85rem;
+}
+
+.dropdown-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+}
+
+/* Buttons */
+.btn {
+    font-size: 0.85rem;
+    padding: 0.4rem 0.9rem;
+}
+
+.btn-sm {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+}
+
+/* Badges */
+.badge {
+    font-size: 0.7rem;
+    padding: 0.3em 0.6em;
+}
+
+/* Alerts */
+.alert {
+    font-size: 0.85rem;
+    padding: 0.75rem 1rem;
+}
+
+/* Pagination */
+.pagination .page-link {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+}
+
+.showing-entries {
+    font-size: 0.8rem;
+}
+
+/* Filter buttons */
+.filter-buttons .btn {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+} 

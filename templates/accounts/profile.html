@@ -1,0 +1,141 @@
+{% extends 'common/dashboard_base.html' %}
+{% load static %}
+
+{% block title %}User Profile | NexusAI Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-card {
+        border-radius: 15px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .profile-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+    
+    .profile-header {
+        background: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 20px;
+    }
+    
+    .profile-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 40px;
+        color: #6c757d;
+        margin: 0 auto 15px;
+        border: 4px solid white;
+    }
+    
+    .form-section {
+        padding: 25px;
+    }
+    
+    .btn-update {
+        background: linear-gradient(45deg, #6a11cb 0%, #2575fc 100%);
+        border: none;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-update:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(37, 117, 252, 0.4);
+    }
+    
+    .info-card {
+        border-left: 4px solid #2575fc;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Profile Information Card -->
+            <div class="card profile-card mb-4">
+                <div class="profile-header text-center">
+                    <div class="profile-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h3>{{ user.username }}</h3>
+                    <p>{{ user.email }}</p>
+                    <div class="badge bg-success">Email Verified</div>
+                </div>
+                
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Username:</strong> {{ user.username }}</p>
+                            <p><strong>Email:</strong> {{ user.email }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Date Joined:</strong> {{ user.date_joined|date:"F d, Y" }}</p>
+                            <p><strong>Last Login:</strong> {{ user.last_login|date:"F d, Y" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Update Username Form -->
+            <div class="card profile-card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-edit me-2"></i>Update Username</h5>
+                </div>
+                <div class="card-body form-section">
+                    <form method="POST" action="{% url 'accounts:update_username' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="current_username" class="form-label">Current Username</label>
+                            <input type="text" class="form-control" id="current_username" value="{{ user.username }}" disabled>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_username" class="form-label">New Username</label>
+                            <input type="text" class="form-control" id="new_username" name="new_username" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-update">Update Username</button>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Update Password Form -->
+            <div class="card profile-card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-key me-2"></i>Change Password</h5>
+                </div>
+                <div class="card-body form-section">
+                    <form method="POST" action="{% url 'accounts:update_password' %}">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="current_password" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="current_password" name="current_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="new_password" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="new_password" name="new_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirm_password" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required>
+                        </div>
+                        <div class="alert alert-info info-card" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>Password should be at least 8 characters long and include a mix of letters, numbers, and special characters.
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-update">Change Password</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
