@@ -584,9 +584,12 @@ def get_chat_messages(request):
 
 @csrf_exempt
 def chat_api(request):
+    print(request.method)
+    print(request.body)
     if request.method == 'GET':
         try:
             messages = get_chat_messages(request)
+            print(messages)
             return JsonResponse({
                 'success': True,
                 'messages': messages
