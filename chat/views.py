@@ -582,10 +582,14 @@ def get_chat_messages(request):
 
 @csrf_exempt
 def chat_api(request):
-    if request.method != 'POST':
-        action = request.GET.get('action')
-        if action == 'get_messages':
+    if request.method == 'GET':
+        try:
             return JsonResponse(get_chat_messages(request))
+        except Exception as e:
+            print(f"Error getting chat messages: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
     
     try:
         data = json.loads(request.body)
@@ -654,11 +658,19 @@ def chat_api(request):
         })
         
     except json.JSONDecodeError:
+        print(f"Error decoding JSON: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': 'Invalid JSON data'}, status=400)
     except Chatbot.DoesNotExist:
+        print(f"Chatbot not found")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': 'Chatbot not found'}, status=404)
     except Exception as e:
         print(f"Error generating response: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return JsonResponse({'error': str(e)}, status=500)
 
 
