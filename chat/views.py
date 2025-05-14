@@ -584,94 +584,96 @@ def get_chat_messages(request):
 def chat_api(request):
     if request.method == 'GET':
         try:
-            return JsonResponse(get_chat_messages(request))
+            return JsonResponse(get_chat_messages(request), status=200)
         except Exception as e:
             print(f"Error getting chat messages: {str(e)}")
             import traceback
             traceback.print_exc()
-            return JsonResponse({'error': str(e)}, status=500)
+            return JsonResponse({'error': str(e)}, status=500, safe=False)
     
-    try:
-        data = json.loads(request.body)
-        message = data.get('message')
-        chatbot_id = data.get('chatbot_id')
-        session_key = data.get('session_key')
-        
-        if not message or not chatbot_id:
-            return JsonResponse({'error': 'Message and chatbot_id are required'}, status=400)
-        
-        # Get the chatbot
-        chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
-        channel = Channel.objects.get(chatbot=chatbot, channel_type='web')
-        # Create or get conversation
-        if session_key:
-            conversation, created = Conversation.objects.get_or_create(
-                session_key=session_key,
-                chatbot=chatbot,
-                channel=channel
+    
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            message = data.get('message')
+            chatbot_id = data.get('chatbot_id')
+            session_key = data.get('session_key')
+            
+            if not message or not chatbot_id:
+                return JsonResponse({'error': 'Message and chatbot_id are required'}, status=400)
+            
+            # Get the chatbot
+            chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
+            channel = Channel.objects.get(chatbot=chatbot, channel_type='web')
+            # Create or get conversation
+            if session_key:
+                conversation, created = Conversation.objects.get_or_create(
+                    session_key=session_key,
+                    chatbot=chatbot,
+                    channel=channel
+                )
+            else:
+                conversation, created = Conversation.objects.get_or_create(
+                    chatbot=chatbot,
+                    from_number=12345,
+                    channel=channel
+                )
+            
+            # Save user message
+            user_message = Message.objects.create(  
+                conversation=conversation,
+                content=message,
+                role='user'
             )
-        else:
-            conversation, created = Conversation.objects.get_or_create(
-                chatbot=chatbot,
-                from_number=12345,
-                channel=channel
+            
+            # Get conversation history for context
+            conversation_history = Message.objects.filter(
+                conversation=conversation
+            ).order_by('created_at')[:10]  # Limit to last 10 messages for context
+            
+            # Format conversation history for the LLM
+            formatted_history = []
+            for msg in conversation_history:
+                role = "user" if msg.role == 'user' else "assistant"
+                formatted_history.append({"role": role, "content": msg.content})
+            
+        
+            from chat.pinecone import create_rag_chain
+            
+            # Create the RAG chain with the chatbot's namespace
+            rag_chain = create_rag_chain(chatbot, namespace=chatbot.name)
+            
+            # Pass the message and the full formatted history to the chain
+            bot_response = rag_chain(message, formatted_history)
+            
+        
+            # Save bot response
+            bot_message = Message.objects.create(
+                conversation=conversation,
+                content=bot_response,
+                role='assistant'
             )
-        
-        # Save user message
-        user_message = Message.objects.create(  
-            conversation=conversation,
-            content=message,
-            role='user'
-        )
-        
-        # Get conversation history for context
-        conversation_history = Message.objects.filter(
-            conversation=conversation
-        ).order_by('created_at')[:10]  # Limit to last 10 messages for context
-        
-        # Format conversation history for the LLM
-        formatted_history = []
-        for msg in conversation_history:
-            role = "user" if msg.role == 'user' else "assistant"
-            formatted_history.append({"role": role, "content": msg.content})
-        
-     
-        from chat.pinecone import create_rag_chain
-        
-        # Create the RAG chain with the chatbot's namespace
-        rag_chain = create_rag_chain(chatbot, namespace=chatbot.name)
-        
-        # Pass the message and the full formatted history to the chain
-        bot_response = rag_chain(message, formatted_history)
-        
-      
-        # Save bot response
-        bot_message = Message.objects.create(
-            conversation=conversation,
-            content=bot_response,
-            role='assistant'
-        )
-        
-        return JsonResponse({
-            'response': bot_response,
-            'message_id': str(bot_message.message_id)
-        })
-        
-    except json.JSONDecodeError:
-        print(f"Error decoding JSON: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'error': 'Invalid JSON data'}, status=400)
-    except Chatbot.DoesNotExist:
-        print(f"Chatbot not found")
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'error': 'Chatbot not found'}, status=404)
-    except Exception as e:
-        print(f"Error generating response: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return JsonResponse({'error': str(e)}, status=500)
+            
+            return JsonResponse({
+                'response': bot_response,
+                'message_id': str(bot_message.message_id)
+            })
+            
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': 'Invalid JSON data'}, status=400)
+        except Chatbot.DoesNotExist:
+            print(f"Chatbot not found")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': 'Chatbot not found'}, status=404)
+        except Exception as e:
+            print(f"Error generating response: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return JsonResponse({'error': str(e)}, status=500)
 
 
 @login_required
