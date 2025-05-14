@@ -576,6 +576,8 @@ def get_chat_messages(request):
         ]
     except Conversation.DoesNotExist:
         return []
+    except Chatbot.DoesNotExist:
+        return []
 
 
 
@@ -584,12 +586,16 @@ def get_chat_messages(request):
 def chat_api(request):
     if request.method == 'GET':
         try:
-            return JsonResponse(get_chat_messages(request), status=200, safe=False)
+            messages = get_chat_messages(request)
+            return JsonResponse({
+                'success': True,
+                'messages': messages
+            }, status=200)
         except Exception as e:
             print(f"Error getting chat messages: {str(e)}")
             import traceback
             traceback.print_exc()
-            return JsonResponse({'error': str(e)}, status=500, safe=False)
+            return JsonResponse({'success': False, 'error': str(e)}, status=500)
     
     
     if request.method == 'POST':
