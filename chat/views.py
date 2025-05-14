@@ -584,7 +584,7 @@ def get_chat_messages(request):
 def chat_api(request):
     if request.method == 'GET':
         try:
-            return JsonResponse(get_chat_messages(request), status=200)
+            return JsonResponse(get_chat_messages(request), status=200, safe=False)
         except Exception as e:
             print(f"Error getting chat messages: {str(e)}")
             import traceback
