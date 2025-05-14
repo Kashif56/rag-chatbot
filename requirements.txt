@@ -16,7 +16,10 @@ Deprecated==1.2.18
 distro==1.9.0
 dj-database-url==2.3.0
 Django==5.2
+django-cors-headers==4.7.0
 docstring_parser==0.16
+docx2txt==0.9
+filetype==1.2.0
 frozenlist==1.6.0
 google-ai-generativelanguage==0.6.15
 google-api-core==2.24.2
@@ -55,6 +58,7 @@ langchain==0.3.23
 langchain-community==0.3.21
 langchain-core==0.3.54
 langchain-experimental==0.3.4
+langchain-google-genai==2.1.2
 langchain-google-vertexai==2.0.20
 langchain-openai==0.3.14
 langchain-pinecone==0.2.5
@@ -74,6 +78,7 @@ opentelemetry-semantic-conventions==0.53b1
 orjson==3.10.16
 packaging==24.2
 pinecone==6.0.2
+pinecone-notebooks==0.1.1
 pinecone-plugin-interface==0.0.7
 pluggy==1.5.0
 propcache==0.3.1
@@ -95,6 +100,7 @@ pytest-socket==0.7.0
 python-dateutil==2.9.0.post0
 python-docx==1.1.2
 python-dotenv==1.1.0
+pytz==2025.2
 PyYAML==6.0.2
 regex==2024.11.6
 requests==2.32.3
