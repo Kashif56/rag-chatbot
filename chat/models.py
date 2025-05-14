@@ -137,6 +137,7 @@ class Conversation(models.Model):
     channel = models.ForeignKey(Channel, on_delete=models.CASCADE)
 
     from_number = models.CharField(max_length=255) # Identifier for SMS and WhatsApp
+    session_key = models.CharField(max_length=255) # Identifier for Web Chat
     from_email = models.CharField(max_length=255) # Identifier for Email
 
 

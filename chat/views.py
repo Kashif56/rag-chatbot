@@ -552,15 +552,46 @@ def public_conversation(request, chatbot_id):
     except Chatbot.DoesNotExist:
         return render(request, 'core/404.html', status=404)
 
+
+
+def get_chat_messages(request):
+    chatbot_id = request.GET.get('chatbot_id')
+    session_key = request.GET.get('session_key')
+
+    if not chatbot_id or not session_key:
+        return []
+
+    try:
+        chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
+        conversation = Conversation.objects.get(chatbot=chatbot, session_key=session_key)
+        messages = Message.objects.filter(conversation=conversation).order_by('created_at')
+        return [
+            {
+                'message_id': str(msg.message_id),
+                'content': msg.content,
+                'role': msg.role,
+                'created_at': msg.created_at.strftime('%Y-%m-%d %H:%M:%S')
+            }
+            for msg in messages
+        ]
+    except Conversation.DoesNotExist:
+        return []
+
+
+
+
 @csrf_exempt
 def chat_api(request):
     if request.method != 'POST':
-        return JsonResponse({'error': 'Method not allowed'}, status=405)
+        action = request.GET.get('action')
+        if action == 'get_messages':
+            return JsonResponse(get_chat_messages(request))
     
     try:
         data = json.loads(request.body)
         message = data.get('message')
         chatbot_id = data.get('chatbot_id')
+        session_key = data.get('session_key')
         
         if not message or not chatbot_id:
             return JsonResponse({'error': 'Message and chatbot_id are required'}, status=400)
@@ -569,11 +600,18 @@ def chat_api(request):
         chatbot = Chatbot.objects.get(chatbot_id=chatbot_id)
         channel = Channel.objects.get(chatbot=chatbot, channel_type='web')
         # Create or get conversation
-        conversation, created = Conversation.objects.get_or_create(
-            chatbot=chatbot,
-            from_number=12345,
-            channel=channel
-        )
+        if session_key:
+            conversation, created = Conversation.objects.get_or_create(
+                session_key=session_key,
+                chatbot=chatbot,
+                channel=channel
+            )
+        else:
+            conversation, created = Conversation.objects.get_or_create(
+                chatbot=chatbot,
+                from_number=12345,
+                channel=channel
+            )
         
         # Save user message
         user_message = Message.objects.create(  
