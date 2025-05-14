@@ -58,7 +58,7 @@ langchain==0.3.23
 langchain-community==0.3.21
 langchain-core==0.3.54
 langchain-experimental==0.3.4
-langchain-google-genai==2.1.2
+langchain-google-genai==2.0.10
 langchain-google-vertexai==2.0.20
 langchain-openai==0.3.14
 langchain-pinecone==0.2.5
